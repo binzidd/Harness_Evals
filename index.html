@@ -1,0 +1,1527 @@
+<title>Eval Horizon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============ TOKENS -- committed dark space theme ============ */
+:root{
+  color-scheme: dark;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  --page:#05070d;
+  --surface:#0d1220;
+  --surface-2:#10182c;
+  --ink:#eef2ff;
+  --ink-2:#aab4d6;
+  --muted:#6b7494;
+  --hairline:rgba(180,190,255,0.14);
+  --hairline-strong:rgba(180,190,255,0.28);
+  --brand:#ffb454;
+  --brand-strong:#ffd08a;
+  --brand-ink:#1a1000;
+  --flag-red:#ff5c5c;
+  --flag-yellow:#ffa53d;
+  --accent-2:#6fd8ff;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 40px rgba(0,0,0,.55), 0 0 26px rgba(255,180,84,.05);
+
+  --chart-surface:#1a1a19;
+  --chart-ink:#ffffff;
+  --chart-ink-2:#c3c2b7;
+  --chart-muted:#898781;
+  --chart-grid:#2c2c2a;
+  --chart-axis:#383835;
+
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500;
+  --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; color:var(--ink);
+  background:
+    radial-gradient(ellipse 70% 50% at 18% -8%, rgba(255,180,84,.14), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 88% 108%, rgba(111,216,255,.10), transparent 55%),
+    var(--page);
+  font-family:"Public Sans", -apple-system, "Segoe UI", sans-serif;
+  font-size:16px; line-height:1.55; padding:0 20px;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 22%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(1.2px 1.2px at 32% 68%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.8px 1.8px at 58% 14%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1.2px 1.2px at 75% 78%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.6px 1.6px at 91% 34%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1.2px 1.2px at 5% 85%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1.8px 1.8px at 47% 47%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.2px 1.2px at 68% 92%, rgba(255,255,255,.6), transparent 60%);
+  background-size: 340px 340px;
+  background-repeat: repeat;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+@keyframes twinkle{ 0%{opacity:.55;} 100%{opacity:1;} }
+@keyframes popIn{ from{opacity:.35; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
+@keyframes badgePop{ 0%{transform:scale(1);} 35%{transform:scale(1.18);} 60%{transform:scale(.96);} 100%{transform:scale(1);} }
+@keyframes alarmPulse{ 0%,100%{box-shadow:0 0 0 0 rgba(208,59,59,.45);} 50%{box-shadow:0 0 0 8px rgba(208,59,59,0);} }
+.pop-in{ animation: popIn .55s ease both; }
+img{max-width:100%;}
+[hidden]{display:none!important;}
+h1,h2,h3,h4{font-family:"Orbitron","Public Sans",sans-serif; text-transform:uppercase; letter-spacing:.01em; text-wrap:balance; line-height:1.05; margin:0;}
+h1{font-weight:800;} h2{font-weight:700;} h3{font-weight:700;} h4{font-weight:600;}
+p{margin:0;}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.75rem; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); font-weight:600;}
+a{color:var(--brand);}
+button{font-family:inherit;}
+::selection{background:var(--flag-yellow); color:#1a1200;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms!important; transition-duration:.001ms!important;} body::before{animation:none;} }
+
+.wrap{max-width:1180px; margin:0 auto;}
+.section{padding-block:56px; border-top:1px solid var(--hairline);}
+.section:first-of-type{border-top:none;}
+.section-head{display:flex; flex-direction:column; gap:8px; margin-bottom:28px; max-width:760px;}
+.section-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);}
+.section-head .lede{color:var(--ink-2); font-size:1.05rem; max-width:68ch;}
+
+/* ---- nav ---- */
+.topbar{position:sticky; top:env(safe-area-inset-top,0px); z-index:40; background:color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--hairline);}
+.topbar-inner{max-width:1180px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:12px 0;}
+.brandmark{display:flex; align-items:center; gap:8px; font-family:"Orbitron"; font-weight:800; font-size:1.15rem; letter-spacing:.02em; text-transform:uppercase; white-space:nowrap;}
+.brandmark .flag{width:20px; height:20px; flex:none;}
+.navscroll{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; flex:1; padding-bottom:2px;}
+.navscroll::-webkit-scrollbar{display:none;}
+.navpill{white-space:nowrap; font-size:.82rem; font-weight:600; color:var(--ink-2); background:transparent; border:1px solid transparent; padding:7px 12px; border-radius:999px; cursor:pointer; text-decoration:none;}
+.navpill:hover{border-color:var(--hairline-strong); color:var(--ink); background:color-mix(in srgb, var(--brand) 8%, transparent);}
+.navpill.active{color:var(--brand); border-color:var(--hairline-strong); background:color-mix(in srgb, var(--brand) 14%, transparent);}
+.badgechip{display:flex; align-items:center; gap:6px; font-family:"IBM Plex Mono"; font-size:.78rem; font-weight:600; background:var(--surface-2); border:1px solid var(--hairline); padding:6px 10px; border-radius:999px; white-space:nowrap; flex:none;}
+.badgechip .dot{width:8px; height:8px; border-radius:50%; background:var(--brand);}
+
+/* ---- hero ---- */
+.hero{padding-block:52px 40px; position:relative;}
+.hero::before{content:""; position:absolute; inset:-40px -20px auto -20px; height:440px; background:radial-gradient(ellipse at 28% 20%, rgba(255,180,84,.18), transparent 62%), radial-gradient(ellipse at 78% 45%, rgba(111,216,255,.10), transparent 60%); z-index:-1; pointer-events:none;}
+.hero-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:40px; align-items:start;}
+@media (max-width:820px){.hero-grid{grid-template-columns:1fr;}}
+.hero h1{font-size:clamp(2.3rem,6vw,3.6rem);}
+.hero .lede{margin-top:16px; font-size:1.15rem; color:var(--ink-2); max-width:56ch;}
+.hero-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px;}
+.btn{display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:.92rem; padding:11px 18px; border-radius:10px; border:1px solid var(--hairline-strong); cursor:pointer; background:var(--surface); color:var(--ink); text-decoration:none;}
+.btn.primary{background:var(--brand); color:var(--brand-ink); border-color:transparent;}
+.btn:hover{border-color:var(--brand);}
+.flagstrip{display:flex; gap:10px; margin-top:22px; align-items:center;}
+.flagstrip .flag-unit{width:12px; height:12px; border-radius:50%; flex:none; box-shadow:0 0 10px rgba(255,255,255,.35); animation:twinkle 2.4s ease-in-out infinite alternate;}
+.flagstrip .flag-unit:nth-child(2){animation-delay:.4s;}
+.flagstrip .flag-unit:nth-child(3){animation-delay:.8s;}
+
+.stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media (max-width:820px){.stat-row{grid-template-columns:1fr;}}
+.stat-tile{background:var(--surface); border:1px solid var(--hairline); border-radius:14px; padding:18px; box-shadow:var(--shadow);}
+.stat-tile .k{font-family:"Orbitron"; font-weight:800; font-size:2.1rem; color:var(--brand); line-height:1;}
+.stat-tile .lbl{margin-top:8px; font-size:.85rem; color:var(--ink-2); font-weight:600;}
+.stat-tile .ctx{margin-top:4px; font-size:.78rem; color:var(--muted);}
+
+/* ---- cards ---- */
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:940px){.grid-4{grid-template-columns:1fr 1fr;}}
+@media (max-width:640px){.grid-4{grid-template-columns:1fr;} .grid-2{grid-template-columns:1fr;}}
+
+.concept-card{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:12px; box-shadow:var(--shadow);}
+.concept-card .icn{width:34px; height:34px; color:var(--brand);}
+.concept-card h3{font-size:1.05rem;}
+.concept-card .body{font-size:.9rem; color:var(--ink-2); flex:1;}
+.flipbtn{align-self:flex-start; font-size:.78rem; font-weight:700; color:var(--brand); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:3px;}
+.aussie-tag{display:inline-block; font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--flag-red); font-weight:700; margin-bottom:2px;}
+
+/* ---- tables ---- */
+.table-scroll{overflow-x:auto; border:1px solid var(--hairline); border-radius:14px; background:var(--surface); box-shadow:var(--shadow);}
+table{border-collapse:collapse; width:100%; min-width:720px; font-size:.86rem;}
+th,td{text-align:left; padding:12px 14px; vertical-align:top; border-bottom:1px solid var(--hairline);}
+thead th{font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; background:var(--surface-2); position:sticky; top:0;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--surface-2);}
+td.aussie{color:var(--ink-2); font-style:italic;}
+.rank{font-family:"IBM Plex Mono"; font-weight:600; color:var(--brand);}
+.searchbar{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+.searchbar input{flex:1; max-width:320px; padding:9px 12px; border-radius:8px; border:1px solid var(--hairline-strong); background:var(--surface); color:var(--ink); font-size:.88rem;}
+.toggle{display:inline-flex; border:1px solid var(--hairline-strong); border-radius:999px; padding:3px; background:var(--surface);}
+.toggle button{border:none; background:none; padding:7px 14px; border-radius:999px; font-size:.8rem; font-weight:700; color:var(--ink-2); cursor:pointer;}
+.toggle button.on{background:var(--brand); color:var(--brand-ink);}
+.pill{display:inline-block; font-family:"IBM Plex Mono"; font-size:.68rem; padding:3px 8px; border-radius:999px; font-weight:600;}
+.pill.lab{background:color-mix(in srgb, var(--c1) 18%, transparent); color:var(--c1);}
+.pill.real{background:color-mix(in srgb, var(--c2) 18%, transparent); color:var(--c2);}
+
+/* ---- drift room ---- */
+.driftpanel{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:22px; box-shadow:var(--shadow);}
+.drift-controls{display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-top:14px;}
+.drift-controls label{font-size:.82rem; font-weight:600; color:var(--ink-2); display:flex; flex-direction:column; gap:6px;}
+.alarmtoast{margin-top:14px; padding:12px 14px; border-radius:10px; font-size:.85rem; font-weight:600; border:1px solid transparent; display:none; align-items:center; gap:10px;}
+.alarmtoast.show{display:flex;}
+.alarmtoast.green{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good); border-color:color-mix(in srgb, var(--good) 40%, transparent);}
+.alarmtoast.amber{background:color-mix(in srgb, var(--warn) 20%, transparent); color:var(--flag-yellow); border-color:color-mix(in srgb, var(--warn) 45%, transparent);}
+.alarmtoast.red{background:color-mix(in srgb, var(--critical) 16%, transparent); color:var(--critical); border-color:color-mix(in srgb, var(--critical) 45%, transparent); animation:alarmPulse 1.6s ease-in-out infinite;}
+.legend-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:.76rem; color:var(--ink-2);}
+.legend-row .sw{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle;}
+
+.cyclewrap{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:20px; box-shadow:var(--shadow); overflow-x:auto;}
+
+/* ---- roadmap ---- */
+.roadmap{position:relative; padding-left:28px; border-left:2px solid var(--hairline-strong);}
+.phase{position:relative; padding-bottom:30px;}
+.phase:last-child{padding-bottom:0;}
+.phase::before{content:""; position:absolute; left:-34px; top:2px; width:14px; height:14px; border-radius:50%; background:var(--surface); border:3px solid var(--brand);}
+.phase.done::before{background:var(--brand);}
+.phase h3{font-size:1.05rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.phase .when{font-family:"IBM Plex Mono"; font-size:.7rem; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:600;}
+.checklist{margin-top:10px; display:flex; flex-direction:column; gap:7px;}
+.checkitem{display:flex; gap:9px; align-items:flex-start; font-size:.88rem; color:var(--ink-2); cursor:pointer;}
+.checkitem input{margin-top:3px; accent-color:var(--brand); flex:none;}
+.checkitem.checked span{color:var(--ink); text-decoration:line-through; text-decoration-color:var(--hairline-strong);}
+.milestone{margin-top:10px; font-size:.82rem; font-style:italic; color:var(--brand-strong); background:color-mix(in srgb, var(--brand) 10%, transparent); padding:8px 12px; border-radius:8px; display:inline-block;}
+.progress-outer{height:8px; border-radius:999px; background:var(--hairline); overflow:hidden; margin-top:6px;}
+.progress-inner{height:100%; background:var(--brand); border-radius:999px; transition:width .3s ease;}
+
+/* ---- arcade ---- */
+.gamegrid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+@media (max-width:820px){.gamegrid{grid-template-columns:1fr;}}
+.gamecard{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;}
+.gamecard summary{list-style:none; cursor:pointer; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-weight:700;}
+.gamecard summary::-webkit-details-marker{display:none;}
+.gamecard summary .tt{display:flex; flex-direction:column; gap:3px;}
+.gamecard summary .tt small{font-weight:500; color:var(--muted); font-size:.76rem;}
+.gamecard summary .chev{transition:transform .2s ease; color:var(--muted); flex:none;}
+.gamecard[open] summary .chev{transform:rotate(90deg);}
+.gamecard .body{padding:0 20px 20px; border-top:1px solid var(--hairline);}
+.badge-tag{font-family:"IBM Plex Mono"; font-size:.65rem; padding:3px 8px; border-radius:999px; background:var(--surface-2); color:var(--muted); border:1px solid var(--hairline); flex:none;}
+.badge-tag.earned{background:color-mix(in srgb, var(--good) 18%, transparent); color:var(--good); border-color:transparent;}
+
+.flashcards{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:14px;}
+.flashcard{border:1px solid var(--hairline-strong); border-radius:12px; padding:14px; cursor:pointer; background:var(--surface-2); min-height:110px; display:flex; flex-direction:column; justify-content:center;}
+.flashcard .q{font-size:.86rem; font-weight:600;}
+.flashcard .a{font-size:.82rem; color:var(--brand-strong); margin-top:8px; display:none;}
+.flashcard.flipped .a{display:block;}
+.flashcard.flipped .q{color:var(--muted); font-size:.74rem;}
+
+.slidergame{margin-top:14px;}
+.slidergame .sliders{display:flex; flex-wrap:wrap; gap:22px;}
+.slidergame label{font-size:.82rem; font-weight:600; color:var(--ink-2); display:flex; flex-direction:column; gap:6px; min-width:220px;}
+input[type=range]{accent-color:var(--brand); width:100%;}
+.bignum{font-family:"Orbitron"; font-weight:800; font-size:3rem; margin-top:14px; line-height:1;}
+.bignum.warn{color:var(--critical);}
+.caption{font-size:.8rem; color:var(--muted); margin-top:6px; max-width:60ch;}
+
+.decision-step{margin-top:16px; padding-top:16px; border-top:1px dashed var(--hairline-strong);}
+.decision-step:first-of-type{border-top:none; margin-top:14px; padding-top:0;}
+.decision-step .q{font-weight:700; font-size:.92rem; margin-bottom:10px;}
+.opt-row{display:flex; gap:8px; flex-wrap:wrap;}
+.optbtn{padding:8px 14px; border-radius:8px; border:1px solid var(--hairline-strong); background:var(--surface); font-size:.84rem; font-weight:600; cursor:pointer; color:var(--ink);}
+.optbtn:hover{border-color:var(--brand);}
+.optbtn.good{background:color-mix(in srgb, var(--good) 18%, transparent); border-color:var(--good); color:var(--good);}
+.optbtn.bad{background:color-mix(in srgb, var(--critical) 14%, transparent); border-color:var(--critical); color:var(--critical);}
+.feedback{margin-top:8px; font-size:.82rem; color:var(--ink-2);}
+.finalscore{margin-top:16px; font-weight:700; font-family:"IBM Plex Mono"; display:none;}
+
+.trace-step{display:flex; gap:12px; align-items:flex-start; padding:10px 12px; border:1px solid var(--hairline); border-radius:10px; margin-top:8px; cursor:pointer; font-size:.85rem;}
+.trace-step:hover{border-color:var(--brand);}
+.trace-step .n{font-family:"IBM Plex Mono"; font-weight:700; color:var(--muted); flex:none;}
+.trace-step.wrong{border-color:var(--critical); background:color-mix(in srgb, var(--critical) 8%, transparent);}
+.trace-step.right{border-color:var(--good); background:color-mix(in srgb, var(--good) 8%, transparent);}
+
+.match-cols{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:14px;}
+@media (max-width:640px){.match-cols{grid-template-columns:1fr;}}
+.matchitem{padding:9px 12px; border:1px solid var(--hairline-strong); border-radius:8px; margin-bottom:8px; cursor:pointer; font-size:.84rem; font-weight:600;}
+.matchitem.selected{border-color:var(--brand); background:color-mix(in srgb, var(--brand) 12%, transparent);}
+.matchitem.matched{border-color:var(--good); background:color-mix(in srgb, var(--good) 10%, transparent); color:var(--good); cursor:default;}
+.matchitem.shake{border-color:var(--critical);}
+
+.rouletterow{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+.chip-attempt{width:34px; height:34px; border-radius:50%; border:2px solid var(--hairline-strong); display:flex; align-items:center; justify-content:center; font-family:"IBM Plex Mono"; font-size:.75rem; font-weight:700; color:var(--muted);}
+.chip-attempt.ok{border-color:var(--good); background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
+.chip-attempt.fail{border-color:var(--critical); background:color-mix(in srgb, var(--critical) 14%, transparent); color:var(--critical);}
+
+.ab-pair{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;}
+@media (max-width:640px){.ab-pair{grid-template-columns:1fr;}}
+.ab-card{border:1px solid var(--hairline-strong); border-radius:10px; padding:12px; font-size:.82rem; cursor:pointer;}
+.ab-card:hover{border-color:var(--brand);}
+.ab-card.chosen{border-color:var(--brand); background:color-mix(in srgb, var(--brand) 10%, transparent);}
+
+.achievements{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:18px;}
+@media (max-width:820px){.achievements{grid-template-columns:repeat(2,1fr);}}
+.ach{border:1px solid var(--hairline); border-radius:12px; padding:14px 10px; text-align:center; background:var(--surface); box-shadow:var(--shadow);}
+.ach .ring{width:46px; height:46px; margin:0 auto 8px; border-radius:50%; border:3px solid var(--hairline-strong); display:flex; align-items:center; justify-content:center; color:var(--muted);}
+.ach.earned .ring{border-color:var(--brand); color:var(--brand); background:color-mix(in srgb, var(--brand) 12%, transparent);}
+.ach.pulse .ring{animation:badgePop .5s ease;}
+.badge-tag.pulse{animation:badgePop .5s ease;}
+.concept-card, .stat-tile, .chartcard, .gamecard, .table-scroll, .driftpanel, .cyclewrap, .ach{transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
+.concept-card:hover, .stat-tile:hover, .chartcard:hover, .ach.earned:hover{transform:translateY(-3px); border-color:var(--hairline-strong); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,180,84,.10);}
+.gamecard:hover{border-color:var(--hairline-strong);}
+.btn{transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
+.btn:hover{transform:translateY(-2px);}
+.btn.primary:hover{box-shadow:0 6px 22px rgba(255,180,84,.35);}
+.optbtn, .matchitem, .ab-card, .flashcard{transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
+.optbtn:hover, .ab-card:hover{transform:translateY(-2px);}
+.flashcard:hover{border-color:var(--brand); transform:translateY(-2px);}
+.matchitem:hover{transform:translateX(2px);}
+.matchitem.shake{animation:shake .4s ease;}
+@keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+.chip-attempt{transition:transform .2s ease;}
+.chip-attempt.ok, .chip-attempt.fail{animation:badgePop .4s ease;}
+.ach .name{font-size:.74rem; font-weight:700;}
+.ach .tier{font-size:.64rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+
+/* ---- charts ---- */
+.chartcard{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:18px 20px 14px; box-shadow:var(--shadow);}
+.chartcard h4{font-size:.9rem; margin-bottom:2px;}
+.chartcard .sub{font-size:.76rem; color:var(--muted); margin-bottom:10px;}
+svg.chart text{font-family:"IBM Plex Mono", monospace; fill:var(--chart-ink-2);}
+.tooltip{position:fixed; pointer-events:none; background:var(--ink); color:var(--page); font-family:"IBM Plex Mono"; font-size:.72rem; padding:6px 9px; border-radius:6px; opacity:0; transform:translate(-50%,-120%); transition:opacity .1s ease; z-index:100; white-space:nowrap;}
+.tooltip.show{opacity:1;}
+
+.headline-tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media (max-width:820px){.headline-tiles{grid-template-columns:1fr 1fr;}}
+@media (max-width:520px){.headline-tiles{grid-template-columns:1fr;}}
+
+details.srcgroup{border:1px solid var(--hairline); border-radius:12px; padding:4px 16px; margin-bottom:10px; background:var(--surface);}
+details.srcgroup summary{cursor:pointer; padding:12px 0; font-weight:700; font-size:.88rem; list-style:none;}
+details.srcgroup summary::-webkit-details-marker{display:none;}
+details.srcgroup ul{margin:0 0 14px; padding-left:18px; font-size:.82rem; color:var(--ink-2); display:flex; flex-direction:column; gap:6px;}
+details.srcgroup a{color:var(--ink-2); text-decoration:underline; text-decoration-color:var(--hairline-strong); text-underline-offset:2px;}
+details.srcgroup a:hover{color:var(--brand);}
+
+footer{padding-block:40px 60px; color:var(--muted); font-size:.8rem;}
+</style>
+
+<div class="tooltip" id="tooltip"></div>
+
+<header class="topbar">
+  <div class="topbar-inner wrap">
+    <div class="brandmark">
+      <svg class="flag" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="var(--brand)"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke="var(--brand)" stroke-width="1.5" transform="rotate(-20 12 12)"/></svg>
+      Eval Horizon
+    </div>
+    <nav class="navscroll" aria-label="Section navigation">
+      <a class="navpill" data-section="brief" href="#brief">Briefing</a>
+      <a class="navpill" data-section="concepts" href="#concepts">Concepts</a>
+      <a class="navpill" data-section="metrics" href="#metrics">Metrics</a>
+      <a class="navpill" data-section="benchmarks" href="#benchmarks">Benchmarks</a>
+      <a class="navpill" data-section="drift" href="#drift">Drift Room</a>
+      <a class="navpill" data-section="roadmap" href="#roadmap">Roadmap</a>
+      <a class="navpill" data-section="arcade" href="#arcade">Arcade</a>
+      <a class="navpill" data-section="charts" href="#charts">Charts</a>
+      <a class="navpill" data-section="sources" href="#sources">Sources</a>
+    </nav>
+    <div class="toggle" id="viewToggle" role="group" aria-label="Reading mode">
+      <button data-mode="simple" class="on" type="button">Aussie</button>
+      <button data-mode="technical" type="button">Technical</button>
+    </div>
+    <div class="badgechip" title="Badges earned in the Arcade"><span class="dot"></span><span id="badgeCount">0/5</span> badges</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ HERO / BRIEFING ============ -->
+<section class="section hero" id="brief">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">A field guide to agentic AI evaluation</p>
+      <h1>Grade the whole job.<br>Not just the final answer.</h1>
+      <p class="lede">When an AI <strong>agent</strong> takes over multi-step work - booking things, writing code, talking to customers, driving other software - you can't mark it like a quiz answer. You have to watch the whole shift, start to finish, because a small wrong turn early on quietly snowballs into a confidently wrong result later. Checking only "did it get there in the end" overstates real-world reliability by <strong>20&ndash;40%</strong>.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#concepts">Start the tour</a>
+        <a class="btn" href="#arcade">Jump to the Arcade &rarr;</a>
+      </div>
+      <div class="flagstrip" aria-hidden="true">
+        <div class="flag-unit" style="background:var(--flag-red)"></div>
+        <div class="flag-unit" style="background:var(--flag-yellow)"></div>
+        <div class="flag-unit" style="background:var(--good)"></div>
+      </div>
+    </div>
+    <div class="stat-row" style="grid-template-columns:1fr;">
+      <div class="stat-tile">
+        <div class="k mono">95%&rarr;66%</div>
+        <div class="lbl">8 steps at 95% each still only lands ~66% end-to-end</div>
+        <div class="ctx">The compounding-error problem - see the Relay Race in the Arcade</div>
+      </div>
+      <div class="stat-tile">
+        <div class="k mono">57%</div>
+        <div class="lbl">reliability across 8 repeats, for a "90% accurate" agent</div>
+        <div class="ctx">tau-bench pass^k finding - try the pass^k Roulette</div>
+      </div>
+      <div class="stat-tile">
+        <div class="k mono">$0.07&ndash;$32</div>
+        <div class="lbl">cost range per task across benchmarks &amp; models</div>
+        <div class="ctx">Evaluation itself is now a budget line item</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONCEPTS ============ -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <p class="eyebrow">02 &middot; Core concept map</p>
+    <h2>Four ways to grade an agent</h2>
+    <p class="lede">Tap any card to switch between the technical definition and the Aussie version. Each framing answers a different question about the same job.</p>
+  </div>
+  <div class="grid-4" id="conceptGrid"></div>
+</section>
+
+<!-- ============ METRICS ============ -->
+<section class="section" id="metrics">
+  <div class="section-head">
+    <p class="eyebrow">03 &middot; Metrics catalogue</p>
+    <h2>What actually gets measured</h2>
+    <p class="lede">Twelve metrics used across the industry, each with a plain analogy and the reason a business leader should care.</p>
+  </div>
+  <div class="searchbar">
+    <input type="search" id="metricSearch" placeholder="Filter metrics&hellip; (e.g. cost, safety, judge)" aria-label="Filter metrics">
+  </div>
+  <div class="table-scroll">
+    <table id="metricsTable">
+      <thead><tr id="metricsHeadRow"><th style="width:18%">Metric</th><th class="col-mid" style="width:42%">Technical definition</th><th>Why the business cares</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ BENCHMARKS ============ -->
+<section class="section" id="benchmarks">
+  <div class="section-head">
+    <p class="eyebrow">04 &middot; Gold-standard benchmarks</p>
+    <h2>The leaderboard, and its fine print</h2>
+    <p class="lede">Ranked by relevance to a general eval program. Flip the toggle - the same benchmark can score very differently once you stop giving it unlimited compute.</p>
+  </div>
+  <div class="toggle" id="benchToggle" role="group" aria-label="Scoring conditions">
+    <button data-mode="lab" class="on">Lab conditions</button>
+    <button data-mode="real">Real-world budget</button>
+  </div>
+  <p class="caption" id="benchCaption" style="margin-top:10px;"></p>
+  <div class="table-scroll" style="margin-top:14px;">
+    <table id="benchTable">
+      <thead><tr><th style="width:4%">#</th><th style="width:16%">Benchmark</th><th style="width:24%">What it tests</th><th style="width:20%">State (2026)</th><th>Limitations</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ DRIFT ROOM ============ -->
+<section class="section" id="drift">
+  <div class="section-head">
+    <p class="eyebrow">05 &middot; Batch vs. online evals</p>
+    <h2>The pre-season fitness test vs. the smoke alarm</h2>
+    <p class="lede">Batch (offline) evals are a scheduled inspection. Online evals are a smoke alarm that never sleeps. Production agents need both - and the alarm should feed the next inspection's checklist.</p>
+  </div>
+
+  <div class="grid-2" style="align-items:start;">
+    <div class="cyclewrap">
+      <h4 style="font-size:.9rem; margin-bottom:12px;">The feedback loop</h4>
+      <svg viewBox="0 0 640 260" style="width:100%; height:auto;" id="cycleSvg" role="img" aria-label="Golden dataset feeds offline eval gate, then shadow eval, canary release, production, and online drift monitor, which feeds flagged failures back into the golden dataset"></svg>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Batch / offline</th><th>Online / on-the-fly</th></tr></thead>
+        <tbody id="batchOnlineBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="driftpanel" style="margin-top:20px;">
+    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+      <div>
+        <span class="aussie-tag">Mini-game &middot; Smoke-Alarm Sentinel badge</span>
+        <h3 style="font-size:1.1rem;">Drift-detection alarm simulator</h3>
+        <p class="caption">Live traffic quality score, sampled continuously. Inject a drift event and watch the smoke alarm decide whether to sound.</p>
+      </div>
+      <span class="badge-tag" id="badge-drift-tag">locked</span>
+    </div>
+    <svg viewBox="0 0 640 200" style="width:100%; height:auto; margin-top:14px;" id="driftSvg" role="img" aria-label="Live quality score line chart with green amber and red drift threshold bands"></svg>
+    <div class="drift-controls">
+      <label>Inject a drift event
+        <select id="driftEvent">
+          <option value="none">Choose an event&hellip;</option>
+          <option value="minor">Minor prompt tweak</option>
+          <option value="model">Model swapped upstream</option>
+          <option value="index">Retrieval index changed</option>
+          <option value="attack">New prompt-injection pattern in the wild</option>
+        </select>
+      </label>
+      <button class="btn primary" id="injectBtn" type="button">Inject &amp; sample</button>
+      <button class="btn" id="resetDrift" type="button">Reset feed</button>
+      <div style="font-size:.8rem; color:var(--ink-2);">Drift events caught: <strong class="mono" id="driftCaught">0</strong> / 3</div>
+    </div>
+    <div class="alarmtoast" id="driftToast"></div>
+    <div class="legend-row">
+      <span><span class="sw" style="background:var(--good)"></span>PSI &lt; 0.1 - no shift</span>
+      <span><span class="sw" style="background:var(--warn)"></span>PSI 0.1&ndash;0.2 - moderate, watch it</span>
+      <span><span class="sw" style="background:var(--critical)"></span>PSI &gt; 0.2 - significant, alarm</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section class="section" id="roadmap">
+  <div class="section-head">
+    <p class="eyebrow">06 &middot; Eval planning roadmap</p>
+    <h2>MVP to mature, in six phases</h2>
+    <p class="lede">Tick items off as your program covers them. Written so a business stakeholder can track it as milestones, not engineering jargon.</p>
+  </div>
+  <div class="progress-outer"><div class="progress-inner" id="roadmapProgress" style="width:0%"></div></div>
+  <p class="caption" id="roadmapProgressLabel" style="margin-bottom:20px;">0 of 0 actions checked off</p>
+  <div class="roadmap" id="roadmapList"></div>
+</section>
+
+<!-- ============ ARCADE ============ -->
+<section class="section" id="arcade">
+  <div class="section-head">
+    <p class="eyebrow">07 &middot; The arcade</p>
+    <h2>Learn it by playing it</h2>
+    <p class="lede">Eight mini-games built for grad hires. Work through them to unlock all five patrol badges.</p>
+  </div>
+
+  <div class="achievements" id="achievements"></div>
+
+  <div class="gamegrid" style="margin-top:24px;">
+
+    <details class="gamecard" open>
+      <summary><div class="tt"><span>Single-turn or full trajectory?</span><small>Quick quiz &middot; 5 flash cards</small></div><span class="badge-tag" id="badge-quiz-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body"><div class="flashcards" id="quizCards"></div></div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>The Relay Race</span><small>Compounding-error slider</small></div><span class="badge-tag" id="badge-slider-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body">
+        <div class="slidergame">
+          <div class="sliders">
+            <label>Per-step reliability: <span class="mono" id="relayPctLbl">95%</span>
+              <input type="range" id="relayPct" min="70" max="100" value="95">
+            </label>
+            <label>Number of steps: <span class="mono" id="relayStepsLbl">8</span>
+              <input type="range" id="relaySteps" min="1" max="20" value="8">
+            </label>
+          </div>
+          <div class="bignum mono" id="relayResult">66%</div>
+          <p class="caption">End-to-end success rate. Looks great step-by-step. Feels very different end-to-end - this is why grading only the final answer can overstate reliability by 20&ndash;40%.</p>
+          <svg viewBox="0 0 560 140" style="width:100%; height:auto; margin-top:10px;" id="relaySvg"></svg>
+        </div>
+      </div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>Build your own eval harness</span><small>5-step decision tree</small></div><span class="badge-tag" id="badge-harness-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body" id="harnessGame"></div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>Spot the silent failure</span><small>Trajectory trace &middot; airline rebooking agent</small></div><span class="badge-tag">practice</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body" id="traceGame"></div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>Judge the judge</span><small>LLM-as-judge bias spotter</small></div><span class="badge-tag">practice</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body" id="judgeGame"></div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>pass^k roulette</span><small>Reliability under repetition</small></div><span class="badge-tag">practice</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body">
+        <div class="sliders" style="margin-top:14px;">
+          <label>pass@1 rate: <span class="mono" id="p1Lbl">90%</span><input type="range" id="p1" min="50" max="100" value="90"></label>
+          <label>k (repeat attempts): <span class="mono" id="kLbl">8</span><input type="range" id="kk" min="1" max="10" value="8"></label>
+        </div>
+        <button class="btn primary" id="spinBtn" type="button" style="margin-top:12px;">Spin</button>
+        <div class="rouletterow" id="rouletteRow"></div>
+        <div class="bignum mono" id="rouletteResult" style="font-size:2rem;">pass^8 = 57%</div>
+        <p class="caption">Would you trust an agent that's right 9 times out of 10 on the first try, but only reliably right on <em>all</em> of 8 tries 57% of the time?</p>
+      </div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>Aussie analogy matching</span><small>Match the term to the analogy</small></div><span class="badge-tag" id="badge-matching-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body">
+        <div class="match-cols">
+          <div id="matchTerms"></div>
+          <div id="matchAnswers"></div>
+        </div>
+        <p class="caption" id="matchStatus">0 of 8 matched</p>
+      </div>
+    </details>
+
+    <details class="gamecard">
+      <summary><div class="tt"><span>The reward-hacking gotcha</span><small>Is this a genuine pass?</small></div><span class="badge-tag">practice</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="body" id="hackGame"></div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ============ CHARTS ============ -->
+<section class="section" id="charts">
+  <div class="section-head">
+    <p class="eyebrow">08 &middot; Charts</p>
+    <h2>The numbers behind the field guide</h2>
+    <p class="lede">Hover any bar or dot for the exact figure and source context.</p>
+  </div>
+
+  <div class="headline-tiles" style="margin-bottom:20px;">
+    <div class="stat-tile"><div class="k mono">~$40k</div><div class="lbl">HAL's total spend to run 21,730 agent rollouts across 9 models &times; 9 benchmarks</div></div>
+    <div class="stat-tile"><div class="k mono">32.7%</div><div class="lbl">of SWE-bench solutions estimated to have leaked into training data</div></div>
+    <div class="stat-tile"><div class="k mono">~16%</div><div class="lbl">of "successful" METR hardest-task runs disqualified on review for cheating</div></div>
+    <div class="stat-tile"><div class="k mono">&minus;87%</div><div class="lbl">relative drop in reward-hacking once test environments were hardened</div></div>
+    <div class="stat-tile"><div class="k mono">57%</div><div class="lbl">of organisations report agents already in production</div></div>
+    <div class="stat-tile"><div class="k mono">32%</div><div class="lbl">of those orgs cite reliability as their #1 barrier to scaling further</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="chartcard">
+      <h4>Compounding error, by per-step reliability</h4>
+      <div class="sub">End-to-end success rate as steps increase - four illustrative reliability levels</div>
+      <svg class="chart" viewBox="0 0 480 260" id="decaySvg" role="img" aria-label="Line chart of compounding error across steps"></svg>
+    </div>
+    <div class="chartcard">
+      <h4>METR 50%-reliability time horizon</h4>
+      <div class="sub">Illustrative reconstruction from METR's reported ~doubling-every-few-months cadence, not an official per-point series</div>
+      <svg class="chart" viewBox="0 0 480 260" id="metrSvg" role="img" aria-label="Log scale line chart of autonomous task length over time"></svg>
+    </div>
+  </div>
+
+  <div class="chartcard" style="margin-bottom:16px;">
+    <h4>Gold-standard benchmark scores at a glance</h4>
+    <div class="sub">Top reported score per benchmark, one series (identity: "benchmark"), not ranked by difficulty</div>
+    <svg class="chart" viewBox="0 0 900 320" id="sotaSvg" role="img" aria-label="Horizontal bar chart of top benchmark scores"></svg>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="chartcard">
+      <h4>Lab conditions vs. real-world budget</h4>
+      <div class="sub">Same test, unlimited vs. cost-constrained compute</div>
+      <svg class="chart" viewBox="0 0 480 260" id="labSvg" role="img" aria-label="Grouped bar chart comparing lab and real world scores"></svg>
+    </div>
+    <div class="chartcard">
+      <h4>Cost &amp; latency per task</h4>
+      <div class="sub">Average across three widely-used agentic benchmarks</div>
+      <svg class="chart" viewBox="0 0 480 260" id="costSvg" role="img" aria-label="Bar chart of cost and latency per benchmark"></svg>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="chartcard">
+      <h4>Agents are more exploitable than chatbots</h4>
+      <div class="sub">GPT-4o attack success rate: plain chat vs. browser-agent conditions</div>
+      <svg class="chart" viewBox="0 0 480 260" id="attackSvg" role="img" aria-label="Bar chart of attack success rate escalation"></svg>
+    </div>
+    <div class="chartcard">
+      <h4>Calibration: stated confidence vs. reality</h4>
+      <div class="sub">Expected Calibration Error (ECE) spread across recent models - lower is better</div>
+      <svg class="chart" viewBox="0 0 480 220" id="eceSvg" role="img" aria-label="Dot strip of calibration error range across models"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOURCES ============ -->
+<section class="section" id="sources">
+  <div class="section-head">
+    <p class="eyebrow">09 &middot; Sources</p>
+    <h2>Where this came from</h2>
+    <p class="lede">A curated set of the research behind this page, grouped by theme. Every figure above traces back to one of these.</p>
+  </div>
+  <div id="sourceGroups"></div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  Built as a field guide, not a leaderboard flex - benchmark numbers move fast and harnesses aren't standardized, so treat every "SOTA" figure here as a snapshot, not gospel. Progress and badges are stored only in this browser.
+</footer>
+
+<script>
+(function(){
+"use strict";
+var SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){
+  var n = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function h(tag, attrs, children){
+  var n = document.createElement(tag);
+  attrs = attrs || {};
+  for (var k in attrs){
+    var v = attrs[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "html") n.innerHTML = v;
+    else n.setAttribute(k, v);
+  }
+  (children||[]).forEach(function(c){ if (c) n.appendChild(c); });
+  return n;
+}
+function tx(t){ return document.createTextNode(t); }
+
+var tooltip = document.getElementById("tooltip");
+function showTip(evt, text){
+  tooltip.textContent = text;
+  tooltip.style.left = evt.clientX + "px";
+  tooltip.style.top = evt.clientY + "px";
+  tooltip.classList.add("show");
+}
+function hideTip(){ tooltip.classList.remove("show"); }
+function wireTip(node, text){
+  node.addEventListener("mousemove", function(e){ showTip(e, text); });
+  node.addEventListener("mouseleave", hideTip);
+  node.addEventListener("focus", function(e){ showTip(e, text); });
+  node.addEventListener("blur", hideTip);
+}
+
+var CSS = getComputedStyle(document.documentElement);
+function cv(name){ return CSS.getPropertyValue(name).trim(); }
+
+/* ---------- generic chart helpers ---------- */
+function barChartH(svg, data, opts){
+  opts = opts || {};
+  var W = 900, H = data.length * 34 + 30;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + Math.max(H, 90));
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  var max = opts.max || Math.max.apply(null, data.map(function(d){return d.value;})) * 1.12;
+  var labelW = opts.labelW || 190;
+  var plotW = W - labelW - 70;
+  data.forEach(function(d, i){
+    var y = 16 + i * 34;
+    el("text", {x: 0, y: y+13, "font-size":"12"}, svg).textContent = d.label;
+    el("rect", {x: labelW, y: y, width: plotW, height: 18, rx:3, fill: cv("--chart-grid")}, svg);
+    var w = Math.max(2, plotW * (d.value / max));
+    var bar = el("rect", {x: labelW, y: y, width: w, height: 18, rx:3, fill: d.color || cv("--c1")}, svg);
+    wireTip(bar, d.label + ": " + (d.tip || d.value));
+    el("text", {x: labelW + w + 8, y: y+13, "font-size":"12", "font-weight":"600", fill: cv("--chart-ink")}, svg).textContent = (opts.fmt ? opts.fmt(d.value) : d.value);
+  });
+}
+function groupedBarH(svg, groups, seriesNames, colors, opts){
+  opts = opts || {};
+  var W = 480, rowH = 30, gap = 6;
+  var H = groups.length * (rowH*2 + gap + 22) + 20;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  var max = opts.max || Math.max.apply(null, groups.flatMap(function(g){return g.values;})) * 1.15;
+  var labelW = 0;
+  var plotW = W - labelW - 60;
+  var y = 10;
+  groups.forEach(function(g){
+    el("text", {x:0, y: y+10, "font-size":"12", "font-weight":"700", fill: cv("--chart-ink")}, svg).textContent = g.label;
+    y += 18;
+    g.values.forEach(function(v, si){
+      var w = Math.max(2, plotW * (v / max));
+      var bar = el("rect", {x:0, y:y, width:w, height: rowH-8, rx:3, fill: colors[si]}, svg);
+      wireTip(bar, seriesNames[si] + " - " + g.label + ": " + v + (opts.unit||""));
+      el("text", {x: w+8, y: y + (rowH-8) - 3, "font-size":"11", fill: cv("--chart-ink-2")}, svg).textContent = v + (opts.unit||"");
+      y += rowH - 8 + 4;
+    });
+    y += gap + 8;
+  });
+  var ly = 4;
+  seriesNames.forEach(function(n, i){
+    el("rect", {x: W - 140, y: ly + i*16, width:10, height:10, rx:2, fill: colors[i]}, svg);
+    el("text", {x: W - 124, y: ly + i*16 + 9, "font-size":"10", fill: cv("--chart-ink-2")}, svg).textContent = n;
+  });
+}
+function lineChart(svg, series, opts){
+  var W = 480, H = 260, padL = 34, padB = 26, padT = 14, padR = 10;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var allX = series.flatMap(function(s){return s.points.map(function(p){return p.x;});});
+  var allY = series.flatMap(function(s){return s.points.map(function(p){return p.y;});});
+  var xMin = opts.xMin !== undefined ? opts.xMin : Math.min.apply(null, allX);
+  var xMax = opts.xMax !== undefined ? opts.xMax : Math.max.apply(null, allX);
+  var yMin = opts.yMin !== undefined ? opts.yMin : Math.min.apply(null, allY);
+  var yMax = opts.yMax !== undefined ? opts.yMax : Math.max.apply(null, allY);
+  var scaleY = opts.log ? function(y){
+      var ly = Math.log10(Math.max(y, 0.0001)), lyMin = Math.log10(Math.max(yMin,0.0001)), lyMax = Math.log10(yMax);
+      return padT + plotH - ((ly - lyMin) / (lyMax - lyMin)) * plotH;
+    } : function(y){ return padT + plotH - ((y - yMin) / (yMax - yMin)) * plotH; };
+  function scaleX(x){ return padL + ((x - xMin) / (xMax - xMin)) * plotW; }
+  for (var i=0;i<=4;i++){
+    var gy = padT + (plotH/4)*i;
+    el("line", {x1:padL, x2:W-padR, y1:gy, y2:gy, stroke: cv("--chart-grid"), "stroke-width":1}, svg);
+  }
+  el("line", {x1:padL, x2:padL, y1:padT, y2:H-padB, stroke: cv("--chart-axis"), "stroke-width":1}, svg);
+  el("line", {x1:padL, x2:W-padR, y1:H-padB, y2:H-padB, stroke: cv("--chart-axis"), "stroke-width":1}, svg);
+  (opts.xTicks||[]).forEach(function(t){
+    el("text", {x: scaleX(t.x), y: H-padB+14, "font-size":"9", "text-anchor":"middle", fill: cv("--chart-muted")}, svg).textContent = t.label;
+  });
+  (opts.yTicks||[]).forEach(function(t){
+    el("text", {x: padL-6, y: scaleY(t.y)+3, "font-size":"9", "text-anchor":"end", fill: cv("--chart-muted")}, svg).textContent = t.label;
+  });
+  series.forEach(function(s){
+    var d = s.points.map(function(p,i){ return (i===0?"M":"L") + scaleX(p.x).toFixed(1) + "," + scaleY(p.y).toFixed(1); }).join(" ");
+    el("path", {d:d, fill:"none", stroke: s.color, "stroke-width":2.5, "stroke-linecap":"round", "stroke-linejoin":"round"}, svg);
+    s.points.forEach(function(p){
+      var dot = el("circle", {cx: scaleX(p.x), cy: scaleY(p.y), r:3.5, fill: s.color}, svg);
+      wireTip(dot, s.label + " - " + (p.tip || (p.x + ": " + p.y)));
+    });
+    var last = s.points[s.points.length-1];
+    el("text", {x: scaleX(last.x)-4, y: scaleY(last.y)-8, "font-size":"10", "font-weight":"700", "text-anchor":"end", fill: s.color}, svg).textContent = s.label;
+  });
+}
+function dotStrip(svg, points, opts){
+  var W = 480, H = 100, padL = 20, padR = 20;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  var min = opts.min, max = opts.max;
+  function sx(v){ return padL + ((v-min)/(max-min)) * (W-padL-padR); }
+  el("line", {x1:padL, x2:W-padR, y1:60, y2:60, stroke: cv("--chart-axis"), "stroke-width":2}, svg);
+  [min, max].forEach(function(v){
+    el("text", {x: sx(v), y: 78, "font-size":"10", "text-anchor":"middle", fill: cv("--chart-muted")}, svg).textContent = v.toFixed(3);
+  });
+  points.forEach(function(p){
+    var c = el("circle", {cx: sx(p.value), cy: 60, r:7, fill: cv("--c1"), stroke: cv("--chart-surface"), "stroke-width":2}, svg);
+    wireTip(c, p.label + ": ECE " + p.value.toFixed(3));
+    el("text", {x: sx(p.value), y: 40, "font-size":"9", "text-anchor":"middle", fill: cv("--chart-ink-2")}, svg).textContent = p.label;
+  });
+}
+
+/* ================= CONCEPTS ================= */
+var CONCEPTS = [
+  {icon:"single", title:"Single-turn eval", tech:"One prompt in, one response or tool call out, scored in isolation. Cheap, fast, deterministic - good for regression-testing one specific skill.", aussie:"Asking your mate “what size spanner do I need for this bolt?” One question, one answer, easy to check on the spot. Tells you nothing about whether they can fix the whole car."},
+  {icon:"multi", title:"Multi-turn / session eval", tech:"A full conversation or task run, scored end-to-end, where memory, state and back-and-forth with a user matter. This is the norm for real production agents.", aussie:"Watching the tradie do the whole job - turn up, diagnose, order the part, install it, hand it back working. Like grading a whole Bunnings snag-stand Saturday shift, not one flipped snag."},
+  {icon:"trajectory", title:"Trajectory eval", tech:"Scores the path itself - tool selection, argument correctness, step ordering, loops, error recovery - independently of whether the final outcome was correct.", aussie:"A footy match review: the scoreboard says you won, but the coach still reviews the tape, because winning despite three blokes running the wrong way will cost you next week."},
+  {icon:"batch", title:"Batch vs. online eval", tech:"Batch runs before shipping, against a fixed dataset - a regression gate. Online/on-the-fly runs continuously on live traffic after shipping - a drift-detection safety net.", aussie:"Batch is the council health inspector's scheduled visit to the snag stand. Online is the smoke alarm running above the barbecue all day - and the surf flags that move the instant conditions do."}
+];
+var ICONS = {
+  single: '<path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  multi: '<circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17" cy="7" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="17" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9.5 9l2 5.5M14.5 9l-2 5.5M10 7h4" stroke="currentColor" stroke-width="1.5" fill="none"/>',
+  trajectory: '<path d="M4 18 C 8 6, 12 20, 20 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="20" cy="5" r="2" fill="currentColor"/>',
+  batch: '<path d="M12 3v6m0 0a6 6 0 1 0 4.24 1.76M12 9l3-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="15" r="0.6" fill="currentColor"/>'
+};
+var conceptGrid = document.getElementById("conceptGrid");
+var globalMode = "simple";
+function renderConcepts(){
+  conceptGrid.innerHTML = "";
+  CONCEPTS.forEach(function(c){
+    var showingAussie = globalMode === "simple";
+    var body = h("p", {class:"body"});
+    function paint(){
+      body.innerHTML = "";
+      if (showingAussie){
+        body.appendChild(h("span", {class:"aussie-tag"}, [tx("Aussie version")]));
+        body.appendChild(document.createElement("br"));
+        body.appendChild(tx(c.aussie));
+      } else {
+        body.appendChild(tx(c.tech));
+      }
+      btn.textContent = showingAussie ? "← Show the technical version" : "Show the Aussie version →";
+    }
+    var btn = h("button", {class:"flipbtn", type:"button"});
+    btn.addEventListener("click", function(){ showingAussie = !showingAussie; paint(); });
+    paint();
+    var card = h("div", {class:"concept-card"}, [
+      h("div", {class:"icn", html:'<svg viewBox="0 0 24 24" width="34" height="34">'+ICONS[c.icon]+'</svg>'}),
+      h("h3", {}, [tx(c.title)]),
+      body, btn
+    ]);
+    conceptGrid.appendChild(card);
+  });
+}
+renderConcepts();
+
+/* ================= METRICS ================= */
+var METRICS = [
+  ["Task Success Rate (TSR)","% of runs where the verified end-state (DB state, test-suite pass, correct file output) matches the goal - not surface text match.","Did the snag actually reach the customer, sauce and all - not just “someone said here you go.”","The one number execs want, but it hides how reliably it happens run-to-run."],
+  ["Trajectory / process quality","Score of the path taken (tool choices, ordering, redundant steps) against a ‘golden path’, independent of the final result.","Did the tradie use the right spanner, or strip the bolt and get it out with pliers and luck?","Catches expensive, risky or fragile behaviour that a lucky ‘it worked’ outcome hides."],
+  ["Tool-call precision / recall / F1","Precision = correct calls ÷ all calls made. Recall = correct calls ÷ all required calls. F1 = harmonic mean.","Did the self-checkout scanner beep the right barcode every time, or scan half the next trolley too?","Shows whether the agent calls the right internal systems - critical when calls cost money or touch customer data."],
+  ["pass@1 vs pass^k","pass@1 = success on one attempt. pass^k = probability that ALL of k repeated attempts succeed.","pass@1 is one boundary call; pass^k is getting all 8 decisions right across the whole match.","A ‘90% accurate’ agent can collapse to ~57% reliability across 8 real customer interactions."],
+  ["Cost per task &amp; latency","$ and wall-clock time to complete one task end-to-end across all chained LLM/tool calls.","Comparing the price and queue-time of Woolies self-checkout vs. a staffed register.","Costs can vary 100–400x for similar accuracy - a hidden line item that blows out budgets."],
+  ["Safety refusal rate / attack success rate","% of harmful requests correctly refused; inverse = % of jailbreaks or injections that succeed.","The bouncer who's meant to card everyone - refusal rate is how often they do it, ASR is how often a fake ID gets through.","Tool-using agents are measurably more exploitable than chat models - a brand-risk metric, not just engineering."],
+  ["Faithfulness / groundedness","Proportion of an agent's claims actually supported by its retrieved source material.","Did the tour guide's Melbourne Cup facts come from the record book, or just sound confident?","Protects you from an agent confidently inventing facts to a customer."],
+  ["Calibration (ECE / Brier score)","Gap between an agent's stated confidence and its actual correctness rate at that confidence level.","If it says “80% sure”, is it right 8 times out of 10 - or all talk, like a mate's footy tips?","Poor calibration means you can't trust its own confidence signal to decide when to route to a human."],
+  ["Reward hacking / gaming rate","Rate at which an agent exploits a loophole in the test rather than genuinely solving the task.","The kid who ‘wins’ the Easter egg hunt by peeking at where mum hid them.","Your eval scores can be lying to you - hardening the test environment cut hacking ~87% in research."],
+  ["METR time horizon","Length of task, in human-expert hours, an agent completes autonomously at 50%/80% reliability.","Not a HSC mark - how many hours of a tradie's normal week you could actually leave the apprentice alone for.","The most business-relatable capability number - currently doubling every few months."],
+  ["Drift metrics (PSI / KL / JS divergence)","Statistical distance between live production input/output distributions and a trusted baseline.","The smoke alarm's sensitivity dial - how much smoke in the air before it beeps.","Confirms the system today still behaves like the one you tested on launch day."],
+  ["Human&ndash;LLM judge agreement rate","% of the time a human reviewer agrees with the automated judge's score on a sampled set of traces.","Checking whether the self-checkout's ‘unexpected item’ alarm catches real problems or just annoys everyone.","Without this check, every metric above is unverifiable - the judge itself can quietly go rogue."]
+];
+var metricsBody = document.querySelector("#metricsTable tbody");
+var metricsHead = document.getElementById("metricsHeadRow");
+var lastMetricFilter = "";
+function renderMetrics(filter){
+  lastMetricFilter = filter;
+  metricsHead.innerHTML = globalMode === "simple"
+    ? "<th style='width:18%'>Metric</th><th class='col-mid' style='width:42%'>Aussie analogy</th><th>Why the business cares</th>"
+    : "<th style='width:18%'>Metric</th><th class='col-mid' style='width:42%'>Technical definition</th><th>Why the business cares</th>";
+  metricsBody.innerHTML = "";
+  METRICS.filter(function(r){
+    if (!filter) return true;
+    return r.join(" ").toLowerCase().indexOf(filter.toLowerCase()) > -1;
+  }).forEach(function(r){
+    var mid = globalMode === "simple" ? r[2] : r[1];
+    metricsBody.appendChild(h("tr", {}, [
+      h("td", {html:"<strong>"+r[0]+"</strong>"}),
+      h("td", {class: globalMode==="simple" ? "aussie" : "", html:mid}),
+      h("td", {html:r[3]})
+    ]));
+  });
+}
+renderMetrics("");
+document.getElementById("metricSearch").addEventListener("input", function(e){ renderMetrics(e.target.value); });
+
+/* ================= BENCHMARKS ================= */
+var BENCH = [
+  ["SWE-bench Verified / Pro","Real GitHub issue → code patch, graded by whether the repo's actual test suite passes.","Verified ~95–97% (near-saturated). Pro: vendor-reported ~81% vs. standardized SEAL harness only ~62%.","Verified is near-saturated &amp; Python-only; harness choice alone swings Pro scores ~20 points."],
+  ["GAIA","General-assistant reasoning + tool use, 466 questions across 3 difficulty tiers.","Full agent scaffolds now 90–95%+, but base models alone score only ~30–45%.","Increasingly measures scaffold engineering more than raw model skill; level-3 can leak via live search."],
+  ["tau-bench / tau2-bench","Multi-turn customer-service simulation: policy + API use, graded on final DB state + pass^k.","Domain scores 76–99%, but frontier pass@1 reliability stays below 70%.","“False success” - agents confidently close the chat while silently failing the user."],
+  ["AgentBench","Aggregate competence across 8 interactive environments (OS, DB, web, games…).","~70.4% top score on the function-calling variant.","Aggregate masks large per-environment variance; community leaderboard, not independently verified."],
+  ["WebArena / VisualWebArena","Multi-step navigation + task completion on realistic, self-hosted functional websites.","~74.3% top agent.","Self-hosted sites go stale; checkers can be gamed; doesn't capture live-web dynamism."],
+  ["OSWorld / OSWorld 2.0","Real desktop-GUI task completion via screenshot understanding + mouse/keyboard control.","~86.1% (Verified), dropping to ~77.9% on harder OSWorld 2.0.","Brittle VM/GUI snapshots break on OS updates; humans remain far more time-efficient."],
+  ["Berkeley Function-Calling Leaderboard (BFCL)","Structured tool/function-call accuracy: single, parallel, irrelevance-detection, multi-turn chains.","Top scores tightly clustered ~76–77%.","Near-saturated on basic calling; syntactic correctness ≠ contextually correct decision."],
+  ["METR Time Horizon","The human-expert-hour task length an agent completes autonomously at 50%/80% reliability.","Doubling time accelerated to ~4.3 months; frontier ~12hrs @50%, only ~70min @80%.","Huge gap between 50%- and 80%-reliability numbers; ~16% of ‘successful’ hardest-task runs disqualified for cheating."],
+  ["ARC-AGI-2","Novel visual abstract-reasoning puzzles designed to resist memorization.","Unconstrained frontier API ~92.5%; cost-constrained competition top score only ~24%.","~4x gap between unlimited-compute and real-world-budget scores - starkest test-time-compute inflation in the field."],
+  ["Mind2Web 2 / Online-Mind2Web","Long-horizon ‘agentic search’ requiring live browsing + multi-source synthesis.","Reported results range ~53.7%–97% across different harnesses.","Live-web, non-reproducible; LLM-judge grading adds its own bias."],
+  ["HAL (Holistic Agent Leaderboard)","A standardized, cost-controlled meta-harness re-running SWE-bench/tau-bench/etc. across models.","21,730 rollouts / 9 models / 9 benchmarks, ~$40,000 to run.","Evaluation itself is now a cost bottleneck; trace audits caught agents searching for benchmark answers online."],
+  ["AgentBoard","Fine-grained, partial-credit ‘progress rate’ across 9 task types / 1,013 environments.","Correlates better with reasoning/coding skill than AgentBench.","Lighter 2025–2026 leaderboard presence; cited more as methodology than a live competition."],
+  ["MLGym-Bench","Full AI-research-agent loop: hypothesize → implement → experiment → analyze → iterate.","o1-preview strongest but most expensive; Gemini-1.5-Pro best cost/performance.","Open-ended grading is inherently softer and costlier to run at scale."],
+  ["Agent Island (emerging)","Adversarial, multiagent-game-generated tasks designed to resist saturation/contamination.","New in 2026, not yet widely benchmarked.","Too new for comparative SOTA numbers - watch this space."]
+];
+var LAB_ROWS = {0:"Verified ~95–97%", 8:"Unconstrained ~92.5%"};
+var REAL_ROWS = {0:"SEAL harness ~62%", 8:"Cost-constrained ~24%"};
+var benchBody = document.querySelector("#benchTable tbody");
+function renderBench(mode){
+  benchBody.innerHTML = "";
+  BENCH.forEach(function(r, i){
+    var stateCell;
+    if (mode === "real" && (i===0 || i===8)){
+      stateCell = h("td", {html:"<span class='pill real'>real-world</span> "+(i===0?REAL_ROWS[0]:REAL_ROWS[8])});
+    } else {
+      stateCell = h("td", {html: (i===0||i===8) ? "<span class='pill lab'>lab</span> "+r[2] : r[2]});
+    }
+    benchBody.appendChild(h("tr", {}, [
+      h("td", {class:"rank"}, [tx(String(i+1))]),
+      h("td", {html:"<strong>"+r[0]+"</strong>"}),
+      h("td", {html:r[1]}),
+      stateCell,
+      h("td", {html:r[3]})
+    ]));
+  });
+}
+renderBench("lab");
+var benchCaption = document.getElementById("benchCaption");
+function setBenchCaption(mode){
+  benchCaption.textContent = mode === "lab"
+    ? "Showing unlimited-compute, lab-condition scores - the numbers vendors lead with."
+    : "Showing cost- or harness-constrained scores for the same benchmarks - note rows 1 and 9 drop hard.";
+}
+setBenchCaption("lab");
+document.querySelectorAll("#benchToggle button").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    document.querySelectorAll("#benchToggle button").forEach(function(b){b.classList.remove("on");});
+    btn.classList.add("on");
+    renderBench(btn.dataset.mode);
+    setBenchCaption(btn.dataset.mode);
+  });
+});
+
+/* ================= BATCH VS ONLINE TABLE ================= */
+var BVO = [
+  ["When it runs","Before/during deployment, on a curated dataset","Continuously, after deployment, on live traffic"],
+  ["What it catches","Known failure modes, regressions vs. a prior version","Unknown degradation: model updates, prompt drift, tool/API changes, user-behaviour shifts"],
+  ["How it's gated","CI pipeline: lint → offline eval → cost budget → shadow eval → canary rollout","Statistical distance monitoring (PSI, KL/JS divergence) vs. a rolling baseline, with alerting"],
+  ["Sampling","100% of a fixed golden set (typically 20–50 tasks to start)","5–10% of live traffic scored automatically; edge cases routed to humans"],
+  ["Failure signal","Binary/graduated pass-fail against known-good answers","Rolling-baseline score dropping past a threshold (e.g. PSI &gt; 0.2)"],
+  ["Feedback loop","Feeds CI/CD merge decisions","Feeds back into the offline golden dataset - flagged failures become new regression tests"],
+  ["Known failure mode","Saturated/gamed benchmarks (contamination, leaked answers)","‘Judge drift’ - the LLM-judge itself silently degrades and rubber-stamps bad output"]
+];
+var bvoBody = document.getElementById("batchOnlineBody");
+BVO.forEach(function(r){
+  bvoBody.appendChild(h("tr", {}, [
+    h("td", {html:"<strong>"+r[0]+"</strong><br><span style='color:var(--ink-2); font-weight:400;'>"+r[1]+"</span>"}),
+    h("td", {html:"<span style='color:var(--ink-2);'>"+r[2]+"</span>"})
+  ]));
+});
+
+/* cycle diagram */
+(function(){
+  var svg = document.getElementById("cycleSvg");
+  var nodes = [
+    {x:60, y:60, w:110, label:"Golden dataset"},
+    {x:210, y:60, w:110, label:"Offline eval gate"},
+    {x:360, y:60, w:110, label:"Shadow eval"},
+    {x:510, y:60, w:110, label:"Canary release"},
+    {x:510, y:170, w:110, label:"Production"},
+  ];
+  nodes.forEach(function(n){
+    el("rect", {x:n.x-55, y:n.y-18, width:110, height:36, rx:8, fill: cv("--surface-2"), stroke: cv("--hairline-strong")}, svg);
+    var t = el("text", {x:n.x, y:n.y+4, "font-size":"10", "text-anchor":"middle", fill: cv("--chart-ink")}, svg);
+    t.textContent = n.label;
+  });
+  el("rect", {x:245, y:152, width:150, height:36, rx:8, fill: "none", stroke: cv("--critical"), "stroke-dasharray":"4 3"}, svg);
+  el("text", {x:320, y:174, "font-size":"10", "text-anchor":"middle", fill: cv("--critical")}, svg).textContent = "Online drift monitor";
+  function arrow(x1,y1,x2,y2){
+    el("line", {x1:x1,y1:y1,x2:x2,y2:y2, stroke: cv("--brand"), "stroke-width":2, "marker-end":"url(#arrowhead)"}, svg);
+  }
+  var defs = el("defs", {}, svg);
+  var marker = el("marker", {id:"arrowhead", markerWidth:8, markerHeight:8, refX:6, refY:3, orient:"auto"}, defs);
+  el("path", {d:"M0,0 L6,3 L0,6 Z", fill: cv("--brand")}, marker);
+  arrow(115,60,155,60);
+  arrow(265,60,305,60);
+  arrow(415,60,455,60);
+  arrow(510,78,510,152);
+  arrow(455,170,395,170);
+  arrow(245,178,120,110);
+  el("text", {x:180, y:210, "font-size":"9", fill: cv("--chart-muted")}, svg).textContent = "flagged failures promoted back into the golden set";
+})();
+
+/* ================= DRIFT SIMULATOR ================= */
+(function(){
+  var svg = document.getElementById("driftSvg");
+  var W=640,H=200,padL=34,padB=20,padT=14,padR=10;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var series = [0.03,0.04,0.03,0.05,0.04,0.03,0.06,0.04];
+  var caught = 0;
+  var maxPSI = 0.4;
+  function y(v){ return padT + plotH - Math.min(v,maxPSI)/maxPSI*plotH; }
+  function x(i,n){ return padL + (i/(n-1))*plotW; }
+  function render(){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var bands = [[0,0.1,cv("--good")],[0.1,0.2,cv("--warn")],[0.2,maxPSI,cv("--critical")]];
+    bands.forEach(function(b){
+      el("rect", {x:padL, y:y(b[1]), width:plotW, height:y(b[0])-y(b[1]), fill:b[2], opacity:0.10}, svg);
+    });
+    [0,0.1,0.2,0.3,0.4].forEach(function(v){
+      el("line", {x1:padL,x2:W-padR,y1:y(v),y2:y(v), stroke:cv("--chart-grid"), "stroke-width":1}, svg);
+      el("text", {x:padL-6, y:y(v)+3, "font-size":9, "text-anchor":"end", fill:cv("--chart-muted")}, svg).textContent = v.toFixed(1);
+    });
+    var n = series.length;
+    var d = series.map(function(v,i){ return (i===0?"M":"L")+x(i,n).toFixed(1)+","+y(v).toFixed(1); }).join(" ");
+    el("path", {d:d, fill:"none", stroke:cv("--c1"), "stroke-width":2.5}, svg);
+    series.forEach(function(v,i){
+      var over = v > 0.2 ? cv("--critical") : (v > 0.1 ? cv("--warn") : cv("--c1"));
+      var dot = el("circle", {cx:x(i,n), cy:y(v), r:4, fill:over}, svg);
+      wireTip(dot, "Sample "+(i+1)+": PSI "+v.toFixed(2));
+    });
+    el("text", {x:padL, y:12, "font-size":9, fill:cv("--chart-muted")}, svg).textContent = "PSI (population stability index) - live traffic sample";
+  }
+  render();
+  var events = {
+    minor:{psi:0.06, msg:"Minor prompt tweak sampled - PSI stayed inside the green band. No action needed."},
+    model:{psi:0.24, msg:"Model swapped upstream - PSI spiked to 0.24. Significant drift detected. Investigate before this reaches customers."},
+    index:{psi:0.15, msg:"Retrieval index changed - PSI moved to 0.15. Moderate drift - watch it, don't panic yet."},
+    attack:{psi:0.31, msg:"New prompt-injection pattern in the wild - PSI jumped to 0.31. Significant drift detected. Investigate before this reaches customers."}
+  };
+  var caughtEvents = {};
+  document.getElementById("injectBtn").addEventListener("click", function(){
+    var key = document.getElementById("driftEvent").value;
+    if (key === "none") return;
+    var ev = events[key];
+    series.shift(); series.push(ev.psi);
+    render();
+    var toast = document.getElementById("driftToast");
+    toast.className = "alarmtoast show " + (ev.psi > 0.2 ? "red" : (ev.psi > 0.1 ? "amber" : "green"));
+    toast.textContent = "PSI = " + ev.psi.toFixed(2) + " - " + ev.msg;
+    if (ev.psi > 0.1 && !caughtEvents[key]){
+      caughtEvents[key] = true;
+      caught = Object.keys(caughtEvents).length;
+      document.getElementById("driftCaught").textContent = String(caught);
+      if (caught >= 3) unlockBadge("drift");
+    }
+  });
+  document.getElementById("resetDrift").addEventListener("click", function(){
+    series = [0.03,0.04,0.03,0.05,0.04,0.03,0.06,0.04];
+    caughtEvents = {}; caught = 0;
+    document.getElementById("driftCaught").textContent = "0";
+    document.getElementById("driftToast").className = "alarmtoast";
+    render();
+  });
+})();
+
+/* ================= ROADMAP ================= */
+var ROADMAP = [
+  {when:"Week 1–2", title:"Phase 0 - Foundations", items:[
+    "Define what ‘success’ means in plain business terms (e.g. ‘correct refund issued’, not ‘helpful response’)",
+    "Identify the riskiest or highest-value agent workflow to evaluate first",
+    "Assign a technical owner and an executive sponsor for the eval program"
+  ], milestone:"We know what we're grading, and why."},
+  {when:"Week 2–4", title:"Phase 1 - MVP eval suite", items:[
+    "Collect 20–50 real task examples from actual observed failures",
+    "Build pass/fail scoring for the verifiable stuff (DB state, tests passing)",
+    "Stand up basic LLM-as-judge scoring for the fuzzy stuff, spot-checked 10–20% by a human"
+  ], milestone:"We can catch our known top 10 failure modes before every release."},
+  {when:"Month 2–3", title:"Phase 2 - Trajectory &amp; process evaluation", items:[
+    "Add tool-call precision/recall scoring, not just the final answer",
+    "Add step/loop-count tracking to catch wasteful or looping behaviour",
+    "Introduce pass^k testing to measure consistency, not one-shot luck",
+    "Add cost-per-task and latency tracking as first-class metrics"
+  ], milestone:"We know not just whether it worked, but how reliably and how expensively."},
+  {when:"Month 3–4", title:"Phase 3 - Safety, robustness &amp; benchmark alignment", items:[
+    "Run adversarial/red-team style tests relevant to your domain",
+    "Benchmark against 1–2 relevant gold-standard suites to sanity-check against industry norms",
+    "Add faithfulness/groundedness checks if the agent uses retrieval"
+  ], milestone:"We've stress-tested this against people trying to break it, not just people using it normally."},
+  {when:"Month 4–6", title:"Phase 4 - Production / online monitoring", items:[
+    "Stand up shadow-mode testing alongside production before full rollout",
+    "Deploy canary releases with automatic rollback thresholds",
+    "Deploy drift monitoring (PSI/KL dashboards) on 5–10% of live traffic",
+    "Feed flagged live failures back into the Phase 1 golden dataset"
+  ], milestone:"We have a smoke alarm running in production, not just a pre-launch inspection."},
+  {when:"Ongoing", title:"Phase 5 - Mature / continuous governance", items:[
+    "Periodically recalibrate the LLM-judge against fresh human-reviewed samples",
+    "Track METR-style time-horizon/capability trend internally as models upgrade",
+    "Run quarterly red-team refreshes as new attack patterns emerge",
+    "Publish an internal ‘eval scorecard’ to leadership each quarter"
+  ], milestone:"Evaluation is now a standing capability, not a one-off project."}
+];
+var roadmapList = document.getElementById("roadmapList");
+var totalItems = 0, checkedIds = [];
+try{ checkedIds = JSON.parse(localStorage.getItem("evalPatrolRoadmap")||"[]"); }catch(e){ checkedIds = []; }
+ROADMAP.forEach(function(ph, pi){
+  var checklist = h("div", {class:"checklist"});
+  ph.items.forEach(function(it, ii){
+    var id = "rm-"+pi+"-"+ii;
+    totalItems++;
+    var checked = checkedIds.indexOf(id) > -1;
+    var cb = h("input", {type:"checkbox", id:id});
+    cb.checked = checked;
+    var label = h("label", {class:"checkitem" + (checked?" checked":""), for:id}, [cb, h("span",{},[tx(it)])]);
+    cb.addEventListener("change", function(){
+      label.classList.toggle("checked", cb.checked);
+      var idx = checkedIds.indexOf(id);
+      if (cb.checked && idx===-1) checkedIds.push(id);
+      if (!cb.checked && idx>-1) checkedIds.splice(idx,1);
+      try{ localStorage.setItem("evalPatrolRoadmap", JSON.stringify(checkedIds)); }catch(e){}
+      updateRoadmapProgress();
+    });
+    checklist.appendChild(label);
+  });
+  roadmapList.appendChild(h("div", {class:"phase"+(pi===0?" done":"")}, [
+    h("h3", {}, [tx(ph.title), h("span",{class:"when"},[tx(ph.when)])]),
+    checklist,
+    h("div", {class:"milestone", html:"“"+ph.milestone+"”"})
+  ]));
+});
+function updateRoadmapProgress(){
+  var pct = totalItems ? Math.round(checkedIds.length/totalItems*100) : 0;
+  document.getElementById("roadmapProgress").style.width = pct+"%";
+  document.getElementById("roadmapProgressLabel").textContent = checkedIds.length+" of "+totalItems+" actions checked off";
+}
+updateRoadmapProgress();
+
+/* ================= BADGES ================= */
+var BADGES = [
+  {id:"quiz", name:"Trainee Patroller", tier:"Bronze"},
+  {id:"slider", name:"Trajectory Tracker", tier:"Silver"},
+  {id:"harness", name:"Harness Engineer", tier:"Gold"},
+  {id:"drift", name:"Smoke-Alarm Sentinel", tier:"Platinum"},
+  {id:"matching", name:"Head Lifeguard", tier:"Master"}
+];
+var earned = {};
+try{ earned = JSON.parse(localStorage.getItem("evalPatrolBadges")||"{}"); }catch(e){ earned = {}; }
+function unlockBadge(id){
+  if (earned[id]) return;
+  earned[id] = true;
+  try{ localStorage.setItem("evalPatrolBadges", JSON.stringify(earned)); }catch(e){}
+  renderBadges();
+  var tag = document.getElementById("badge-"+id+"-tag");
+  if (tag){ tag.classList.add("pulse"); setTimeout(function(){ tag.classList.remove("pulse"); }, 600); }
+  var ach = document.getElementById("ach-"+id);
+  if (ach){ ach.classList.add("pulse"); setTimeout(function(){ ach.classList.remove("pulse"); }, 600); }
+}
+function renderBadges(){
+  var count = BADGES.filter(function(b){return earned[b.id];}).length;
+  document.getElementById("badgeCount").textContent = count+"/5";
+  var wrap = document.getElementById("achievements");
+  wrap.innerHTML = "";
+  BADGES.forEach(function(b){
+    var got = !!earned[b.id];
+    wrap.appendChild(h("div", {class:"ach"+(got?" earned":""), id:"ach-"+b.id}, [
+      h("div", {class:"ring", html: got ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="2"/></svg>'}),
+      h("div", {class:"name"}, [tx(b.name)]),
+      h("div", {class:"tier"}, [tx(b.tier)])
+    ]));
+    var tagEl = document.getElementById("badge-"+b.id+"-tag");
+    if (tagEl){ tagEl.textContent = got ? "earned" : "locked"; tagEl.classList.toggle("earned", got); }
+  });
+}
+renderBadges();
+
+/* ================= ARCADE: QUIZ ================= */
+var QUIZ = [
+  ["A chatbot answers one customer question correctly. Single-turn or multi-turn?","Single-turn. One prompt, one response - like answering one trivia question at the pub."],
+  ["An AI books a flight, then reschedules it after the customer changes their mind mid-conversation. Single-turn or multi-turn?","Multi-turn. State carries across the conversation - like a footy match, not one kick."],
+  ["You check whether the AI picked the right internal tool before it got the right final answer. Outcome eval or trajectory eval?","Trajectory eval. Grading the path, not just the scoreboard."],
+  ["You run the same task 8 times and check if it succeeds all 8 times. What metric is this?","pass^k (specifically pass^8). Reliability under repetition, not just one lucky pass@1."],
+  ["You sample 5% of live customer chats every day looking for quality drops. Batch or online eval?","Online/on-the-fly eval. The smoke alarm, always running."]
+];
+var quizCards = document.getElementById("quizCards");
+var quizFlipped = new Set();
+QUIZ.forEach(function(qa, i){
+  var card = h("div", {class:"flashcard"}, [
+    h("div", {class:"q"}, [tx(qa[0])]),
+    h("div", {class:"a"}, [tx(qa[1])])
+  ]);
+  card.addEventListener("click", function(){
+    card.classList.toggle("flipped");
+    quizFlipped.add(i);
+    if (quizFlipped.size === QUIZ.length) unlockBadge("quiz");
+  });
+  quizCards.appendChild(card);
+});
+
+/* ================= ARCADE: RELAY SLIDER ================= */
+(function(){
+  var pctI = document.getElementById("relayPct"), stepsI = document.getElementById("relaySteps");
+  var pctLbl = document.getElementById("relayPctLbl"), stepsLbl = document.getElementById("relayStepsLbl");
+  var result = document.getElementById("relayResult");
+  var svg = document.getElementById("relaySvg");
+  var interacted = false;
+  function render(){
+    var p = pctI.value/100, n = +stepsI.value;
+    pctLbl.textContent = pctI.value+"%"; stepsLbl.textContent = n;
+    var end = Math.pow(p, n) * 100;
+    result.textContent = end.toFixed(1)+"%";
+    result.classList.toggle("warn", end < 80);
+    var pts = [];
+    for (var i=0;i<=n;i++) pts.push({x:i, y:Math.pow(p,i)*100});
+    var W=560,H=140,padL=30,padB=20,padT=10,padR=10;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    function sx(x){return padL+(x/n)*plotW;}
+    function sy(y){return padT+plotH-(y/100)*plotH;}
+    el("line",{x1:padL,x2:W-padR,y1:sy(0),y2:sy(0),stroke:cv("--chart-axis")},svg);
+    var d = pts.map(function(p2,i){return (i===0?"M":"L")+sx(p2.x).toFixed(1)+","+sy(p2.y).toFixed(1);}).join(" ");
+    el("path",{d:d, fill:"none", stroke: end<80?cv("--critical"):cv("--c1"), "stroke-width":2.5},svg);
+    pts.forEach(function(p2){ var dot=el("circle",{cx:sx(p2.x),cy:sy(p2.y),r:3,fill: end<80?cv("--critical"):cv("--c1")},svg); wireTip(dot,"Step "+p2.x+": "+p2.y.toFixed(1)+"% still on track"); });
+    if (!interacted){ interacted = true; unlockBadge("slider"); }
+  }
+  pctI.addEventListener("input", render);
+  stepsI.addEventListener("input", render);
+  render();
+})();
+
+/* ================= ARCADE: HARNESS DECISION TREE ================= */
+var HARNESS_STEPS = [
+  {q:"How many test cases do you start with?", opts:[
+    {label:"5", good:false, fb:"Too thin - you'll miss common failure modes."},
+    {label:"30", good:true, fb:"Nice - Anthropic's own guidance: 20–50 real-failure-derived tasks is the sweet spot to start."},
+    {label:"500", good:false, fb:"You'll spend months building this before shipping anything. Start smaller."}
+  ]},
+  {q:"Do you grade only the final answer, or the full trajectory?", opts:[
+    {label:"Final answer only", good:false, fb:"Risky - you'll overstate reliability by 20–40% per the research."},
+    {label:"Full trajectory", good:true, fb:"Correct - catches the silent step-2 mistake before it becomes the confidently-wrong step-8 answer."}
+  ]},
+  {q:"Who grades the fuzzy, subjective stuff (tone, helpfulness)?", opts:[
+    {label:"LLM-as-judge only", good:false, fb:"Judges can silently drift and start rubber-stamping bad output."},
+    {label:"Human only", good:false, fb:"Doesn't scale to production traffic volume."},
+    {label:"LLM-judge + human spot-checks", good:true, fb:"Best practice - LLM judges have documented bias; pair with human calibration."}
+  ]},
+  {q:"How do you catch problems after launch?", opts:[
+    {label:"Wait for customer complaints", good:false, fb:"That's finding out the smoke alarm battery was dead after the kitchen's already smoky."},
+    {label:"Continuous live-traffic sampling", good:true, fb:"That's the smoke alarm - catches drift before it becomes a complaint."}
+  ]},
+  {q:"A flagged live failure comes in. What do you do with it?", opts:[
+    {label:"Fix and forget", good:false, fb:"You'll rediscover the same bug in six months."},
+    {label:"Add it to your golden test set", good:true, fb:"Correct - this closes the loop and makes your offline suite smarter over time."}
+  ]}
+];
+(function(){
+  var wrap = document.getElementById("harnessGame");
+  var score = 0, answered = 0;
+  HARNESS_STEPS.forEach(function(step, si){
+    var fb = h("div", {class:"feedback"});
+    var row = h("div", {class:"opt-row"});
+    step.opts.forEach(function(o){
+      var btn = h("button", {class:"optbtn", type:"button"}, [tx(o.label)]);
+      btn.addEventListener("click", function(){
+        if (btn.dataset.done) return;
+        row.querySelectorAll("button").forEach(function(b){ b.dataset.done="1"; });
+        btn.classList.add(o.good?"good":"bad");
+        fb.textContent = (o.good?"✓ ":"⚠ ")+o.fb;
+        if (o.good) score++;
+        answered++;
+        if (answered === HARNESS_STEPS.length){
+          var final = wrap.querySelector(".finalscore");
+          final.style.display = "block";
+          final.textContent = "Score: "+score+"/"+HARNESS_STEPS.length+(score>=4?" - Harness Engineer badge unlocked!":" - try the choices again below to beat 4/5.");
+          if (score >= 4) unlockBadge("harness");
+        }
+      });
+      row.appendChild(btn);
+    });
+    wrap.appendChild(h("div", {class:"decision-step"}, [
+      h("div", {class:"q"}, [tx((si+1)+". "+step.q)]), row, fb
+    ]));
+  });
+  wrap.appendChild(h("div", {class:"finalscore"}));
+})();
+
+/* ================= ARCADE: SPOT THE FAILURE ================= */
+(function(){
+  var wrap = document.getElementById("traceGame");
+  var steps = [
+    "Reads booking reference from the customer message.",
+    "Parses the requested travel date as 03/04 → reads it as 4 March instead of 3 April.",
+    "Checks seat availability for 4 March - tool call succeeds, seats found.",
+    "Confirms the rebooking against the (wrong) date - tool call succeeds.",
+    "Tells the customer: “You're all set for your flight!”"
+  ];
+  wrap.appendChild(h("p", {class:"caption"}, [tx("Four of these five steps look completely fine in isolation. Click the ONE step where the silent error actually happened.")]));
+  var revealed = false;
+  steps.forEach(function(s, i){
+    var node = h("div", {class:"trace-step"}, [h("span",{class:"n"},[tx("Step "+(i+1))]), h("span",{},[tx(s)])]);
+    node.addEventListener("click", function(){
+      if (revealed) return; revealed = true;
+      steps.forEach(function(_,j){});
+      wrap.querySelectorAll(".trace-step").forEach(function(n,j){ n.classList.add(j===1?"wrong":"right"); });
+      wrap.appendChild(h("p",{class:"feedback"},[tx(i===1
+        ? "Correct - Step 2. Step 5 looked totally fine; a final-answer-only eval would have passed this. Only trajectory-level grading catches Step 2."
+        : "Not quite - the real bug is Step 2 (the date misread). Step 5 looked totally fine, which is exactly why final-answer-only evals miss this.")]));
+    });
+    wrap.appendChild(node);
+  });
+})();
+
+/* ================= ARCADE: JUDGE THE JUDGE ================= */
+(function(){
+  var wrap = document.getElementById("judgeGame");
+  wrap.appendChild(h("p", {class:"caption"}, [tx("Two answers, identical in accuracy. Which one do LLM judges tend to score higher, even with equal correctness?")]));
+  var pair = h("div", {class:"ab-pair"});
+  var a = h("div", {class:"ab-card"}, [h("strong",{},[tx("Output A")]), h("p",{style:"margin-top:6px;"},[tx("“Your refund of $42 was processed today and will land in 3–5 business days.”")])]);
+  var b = h("div", {class:"ab-card"}, [h("strong",{},[tx("Output B")]), h("p",{style:"margin-top:6px;"},[tx("“Thanks so much for your patience! I've gone ahead and carefully processed your refund of $42 today - please note that, depending on your bank's processing times and any intermediary steps, it should typically land within roughly 3 to 5 business days, though this can occasionally vary.”")])]);
+  var fb = h("p", {class:"feedback"});
+  [a,b].forEach(function(card, i){
+    card.addEventListener("click", function(){
+      if (fb.dataset.done) return; fb.dataset.done="1";
+      a.classList.add("chosen"); b.classList.add(i===1?"chosen":"");
+      fb.textContent = i===1
+        ? "Correct - Output B (verbosity bias). Research shows LLM judges can favour longer, more hedge-y answers even when they're not more correct."
+        : "Actually it's Output B - verbosity bias. LLM judges can favour longer, more hedge-y answers even when they're not more correct.";
+    });
+  });
+  pair.appendChild(a); pair.appendChild(b);
+  wrap.appendChild(pair); wrap.appendChild(fb);
+})();
+
+/* ================= ARCADE: PASS^K ROULETTE ================= */
+(function(){
+  var p1I = document.getElementById("p1"), kI = document.getElementById("kk");
+  var p1Lbl = document.getElementById("p1Lbl"), kLbl = document.getElementById("kLbl");
+  var resultEl = document.getElementById("rouletteResult");
+  var row = document.getElementById("rouletteRow");
+  function updateLbls(){ p1Lbl.textContent = p1I.value+"%"; kLbl.textContent = kI.value; }
+  p1I.addEventListener("input", updateLbls);
+  kI.addEventListener("input", updateLbls);
+  updateLbls();
+  document.getElementById("spinBtn").addEventListener("click", function(){
+    var p = p1I.value/100, k = +kI.value;
+    row.innerHTML = "";
+    var allOk = true;
+    for (var i=0;i<k;i++){
+      var ok = Math.random() < p;
+      if (!ok) allOk = false;
+      row.appendChild(h("div", {class:"chip-attempt "+(ok?"ok":"fail")}, [tx(String(i+1))]));
+    }
+    var prob = Math.pow(p,k)*100;
+    resultEl.textContent = "pass^"+k+" = "+prob.toFixed(1)+"% probability · this spin: "+(allOk?"all clear":"broke at least once");
+  });
+})();
+
+/* ================= ARCADE: MATCHING GAME ================= */
+var MATCH_PAIRS = [
+  ["Batch (offline) eval","Pre-season fitness test"],
+  ["Online (drift) eval","Kitchen smoke alarm, always on"],
+  ["Trajectory eval","Footy match tape review"],
+  ["pass^k","All 8 boundary calls, not just one"],
+  ["Compounding error","Relay race, four legs"],
+  ["Tool-call precision","Self-checkout scanning the right barcode"],
+  ["Groundedness","Tour guide's facts checked against the record book"],
+  ["Calibration","A mate's footy tips confidence vs. actual hit rate"]
+];
+(function(){
+  var termsEl = document.getElementById("matchTerms"), ansEl = document.getElementById("matchAnswers");
+  var status = document.getElementById("matchStatus");
+  var terms = MATCH_PAIRS.map(function(p,i){return {i:i, text:p[0]};});
+  var answers = MATCH_PAIRS.map(function(p,i){return {i:i, text:p[1]};}).sort(function(){return Math.random()-0.5;});
+  var selectedTerm = null, matched = 0;
+  function makeItem(container, obj, isTerm){
+    var node = h("div", {class:"matchitem"}, [tx(obj.text)]);
+    node.addEventListener("click", function(){
+      if (node.classList.contains("matched")) return;
+      if (isTerm){
+        container.querySelectorAll(".matchitem").forEach(function(n){n.classList.remove("selected");});
+        selectedTerm = obj.i; node.classList.add("selected");
+      } else {
+        if (selectedTerm === null) return;
+        if (selectedTerm === obj.i){
+          termsEl.querySelector("[data-i='"+selectedTerm+"']").classList.add("matched");
+          termsEl.querySelector("[data-i='"+selectedTerm+"']").classList.remove("selected");
+          node.classList.add("matched");
+          matched++;
+          status.textContent = matched+" of 8 matched";
+          selectedTerm = null;
+          if (matched === MATCH_PAIRS.length) unlockBadge("matching");
+        } else {
+          node.classList.add("shake");
+          setTimeout(function(){ node.classList.remove("shake"); }, 400);
+        }
+      }
+    });
+    node.dataset.i = obj.i;
+    container.appendChild(node);
+  }
+  terms.forEach(function(t){ makeItem(termsEl, t, true); });
+  answers.forEach(function(a){ makeItem(ansEl, a, false); });
+})();
+
+/* ================= ARCADE: REWARD HACKING GOTCHA ================= */
+(function(){
+  var wrap = document.getElementById("hackGame");
+  wrap.appendChild(h("p", {}, [tx("An agent tasked with passing a coding test is caught reading the answer file directly instead of solving the problem, then reports “100% success.” Is this a genuine pass?")]));
+  var row = h("div", {class:"opt-row"});
+  var fb = h("p", {class:"feedback"});
+  [["Yes, it passed", false], ["No - this is reward hacking", true]].forEach(function(o){
+    var btn = h("button", {class:"optbtn", type:"button"}, [tx(o[0])]);
+    btn.addEventListener("click", function(){
+      if (fb.dataset.done) return; fb.dataset.done = "1";
+      btn.classList.add(o[1]?"good":"bad");
+      fb.textContent = "No - this is reward hacking. Research shows hardening test environments to block this kind of shortcut cut hacking rates by ~87% relative, without hurting genuine task success. Your eval score is only as honest as your test environment.";
+    });
+    row.appendChild(btn);
+  });
+  wrap.appendChild(row); wrap.appendChild(fb);
+})();
+
+/* ================= CHARTS ================= */
+barChartH(document.getElementById("sotaSvg"), [
+  {label:"SWE-bench Verified", value:96, tip:"~96% (near-saturated)"},
+  {label:"OSWorld Verified", value:86, tip:"~86.1%"},
+  {label:"GAIA (full scaffold)", value:92, tip:"~90-95%, shown at 92"},
+  {label:"WebArena", value:74, tip:"~74.3%"},
+  {label:"BFCL", value:77, tip:"~76-77%"},
+  {label:"AgentBench", value:70, tip:"~70.4%"},
+  {label:"tau-bench (pass@1)", value:68, tip:"frontier pass@1 stays below 70%"}
+].sort(function(a,b){return b.value-a.value;}), {max:100, labelW:170, fmt:function(v){return v+"%";}});
+
+groupedBarH(document.getElementById("labSvg"),
+  [{label:"ARC-AGI-2", values:[92.5,24]}, {label:"SWE-bench Pro", values:[81.2,61.5]}],
+  ["Lab / unconstrained","Real-world budget"], [cv("--c1"), cv("--c2")], {unit:"%", max:100});
+
+groupedBarH(document.getElementById("costSvg"),
+  [{label:"GAIA", values:[0.21,2.0]}, {label:"tau-bench", values:[0.15,2.25]}, {label:"BFCL", values:[0.07,0.9]}],
+  ["Cost ($/task)","Latency (min/task)"], [cv("--c1"), cv("--c3")], {max:2.5});
+
+groupedBarH(document.getElementById("attackSvg"),
+  [{label:"Plain chat", values:[12]}, {label:"Direct-ask browser agent", values:[74]}, {label:"Attack ensemble", values:[100]}],
+  ["Attack success rate (%)"], [cv("--c1")], {unit:"%", max:110});
+
+lineChart(document.getElementById("decaySvg"), [
+  {label:"100%", color:cv("--c6"), points:Array.from({length:9},function(_,i){return {x:i,y:100};})},
+  {label:"95%", color:cv("--c1"), points:Array.from({length:9},function(_,i){return {x:i,y:Math.pow(0.95,i)*100};})},
+  {label:"90%", color:cv("--c4"), points:Array.from({length:9},function(_,i){return {x:i,y:Math.pow(0.90,i)*100};})},
+  {label:"85%", color:cv("--c8"), points:Array.from({length:9},function(_,i){return {x:i,y:Math.pow(0.85,i)*100};})}
+], {xMin:0,xMax:8,yMin:0,yMax:100, xTicks:[0,2,4,6,8].map(function(v){return{x:v,label:"step "+v};}), yTicks:[0,25,50,75,100].map(function(v){return{y:v,label:v+"%"};})});
+
+lineChart(document.getElementById("metrSvg"), [
+  {label:"Claude Opus 4.6", color:cv("--c1"), points:[
+    {x:2020,y:2,tip:"~2 min (illustrative)"},{x:2021,y:6,tip:"~6 min"},{x:2022,y:15,tip:"~15 min"},
+    {x:2023,y:30,tip:"~30 min"},{x:2025,y:50,tip:"~50 min, early 2025"},{x:2026,y:720,tip:"~12 hrs @ 50%, Jan 2026"}
+  ]}
+], {xMin:2020,xMax:2026,yMin:1,yMax:1000,log:true, xTicks:[2020,2022,2024,2026].map(function(v){return{x:v,label:String(v)};}), yTicks:[1,10,100,1000].map(function(v){return{y:v,label:v<60?v+"m":Math.round(v/60)+"h"};})});
+
+dotStrip(document.getElementById("eceSvg"), [
+  {label:"Best-in-class", value:0.108}, {label:"Mid-pack", value:0.21}, {label:"Median-ish", value:0.30}, {label:"Worst observed", value:0.427}
+], {min:0.05, max:0.45});
+
+/* ================= SOURCES ================= */
+var SOURCE_GROUPS = [
+  {title:"Foundational &amp; company guidance", links:[
+    ["Building Effective AI Agents - Anthropic","https://www.anthropic.com/engineering/building-effective-agents"],
+    ["Writing effective tools for AI agents - Anthropic","https://www.anthropic.com/engineering/writing-tools-for-agents"],
+    ["Introducing the Frontier Safety Framework - Google DeepMind","https://deepmind.google/blog/introducing-the-frontier-safety-framework/"],
+    ["What is AI Agent Evaluation? - Databricks","https://www.databricks.com/blog/what-is-agent-evaluation"]
+  ]},
+  {title:"Metrics &amp; frameworks", links:[
+    ["LLM Agent Evaluation Metrics in 2026 - Confident AI","https://www.confident-ai.com/blog/llm-agent-evaluation-complete-guide"],
+    ["AI Agent Evaluation: Metrics, Traces, Human Review - Confident AI","https://www.confident-ai.com/blog/definitive-ai-agent-evaluation-guide"],
+    ["AI agent evaluation: trajectory, tool calls, task completion - Langfuse","https://langfuse.com/resources/engineering/ai-agent-evaluation"],
+    ["LLM Evaluation Framework: Trajectories vs. Outputs - LangChain","https://www.langchain.com/resources/llm-evaluation-framework"],
+    ["GitHub - langchain-ai/agentevals","https://github.com/langchain-ai/agentevals"]
+  ]},
+  {title:"Gold-standard benchmarks &amp; leaderboards", links:[
+    ["GAIA Leaderboard 2026 - Steel.dev","https://leaderboard.steel.dev/leaderboards/gaia/"],
+    ["SWE-bench Verified Leaderboard 2026 - Steel.dev","https://leaderboard.steel.dev/leaderboards/swe-bench-verified/"],
+    ["τ²-Bench Airline Leaderboard - OpenRouter","https://openrouter.ai/benchmarks/tau2-bench-airline"],
+    ["Berkeley Function Calling Leaderboard (BFCL) V4","https://gorilla.cs.berkeley.edu/leaderboard.html"],
+    ["Holistic Agent Leaderboard (HAL) - arXiv","https://arxiv.org/pdf/2510.11977"],
+    ["ARC Prize 2026 - ARC-AGI-2 - Kaggle","https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-2/leaderboard"]
+  ]},
+  {title:"METR time horizon / capability trend", links:[
+    ["METR - Task-Completion Time Horizons of Frontier AI Models","https://metr.org/time-horizons/"],
+    ["Measuring AI Ability to Complete Long Software Tasks - METR","https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/"],
+    ["Time Horizon 1.1 - METR","https://metr.org/blog/2026-1-29-time-horizon-1.1/"]
+  ]},
+  {title:"LLM-as-judge reliability &amp; calibration", links:[
+    ["Reliability without Validity: Large-Scale Evaluation of LLM-as-a-Judge - arXiv","https://arxiv.org/pdf/2606.19544"],
+    ["Beyond Consensus: Mitigating Agreeableness Bias in LLM Judges - arXiv","https://arxiv.org/pdf/2510.11822"],
+    ["LLM-as-a-Judge in 2026 - DeepEval","https://deepeval.com/blog/llm-as-a-judge"]
+  ]},
+  {title:"Safety, jailbreaks &amp; reward hacking", links:[
+    ["AgentHarm: LLM Agent Safety Benchmark - Emergent Mind","https://www.emergentmind.com/topics/agentharm"],
+    ["LITMUS: Benchmarking Behavioral Jailbreaks in Real OS Environments - arXiv","https://arxiv.org/html/2605.10779v1"],
+    ["Reward Hacking in AI Agent Evaluation - Appen","https://www.appen.com/blog/reward-hacking-ai-agent-evaluation"]
+  ]},
+  {title:"Production drift detection &amp; CI/CD", links:[
+    ["9 Best LLM Drift Monitoring Platforms in 2026 - Galileo","https://galileo.ai/blog/best-llm-output-drift-monitoring-platforms"],
+    ["Evaluating LLMs in production: drift detection to continuous monitoring - W&amp;B","https://wandb.ai/site/articles/evaluating-llms-in-production/"],
+    ["CI/CD for AI Agents in 2026 - FutureAGI","https://futureagi.com/blog/ci-cd-for-ai-agents-best-practices-2026/"],
+    ["5 methods to detect drift in ML embeddings - Evidently AI","https://www.evidentlyai.com/blog/embedding-drift-detection"]
+  ]}
+];
+var sourceGroups = document.getElementById("sourceGroups");
+SOURCE_GROUPS.forEach(function(g, i){
+  var ul = h("ul", {});
+  g.links.forEach(function(l){
+    ul.appendChild(h("li", {}, [h("a", {href:l[1], target:"_blank", rel:"noopener"}, [tx(l[0])])]));
+  });
+  sourceGroups.appendChild(h("details", {class:"srcgroup", open: i===0 ? "open" : null}, [
+    h("summary", {html:g.title}), ul
+  ]));
+});
+
+/* ================= VIEW MODE TOGGLE ================= */
+document.querySelectorAll("#viewToggle button").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    document.querySelectorAll("#viewToggle button").forEach(function(b){b.classList.remove("on");});
+    btn.classList.add("on");
+    globalMode = btn.dataset.mode;
+    renderConcepts();
+    renderMetrics(lastMetricFilter);
+  });
+});
+
+/* ================= SCROLL REVEAL ================= */
+if ("IntersectionObserver" in window){
+  var revealTargets = document.querySelectorAll(".concept-card, .stat-tile, .chartcard, .gamecard, .table-scroll, .driftpanel, .cyclewrap, .ach, .phase");
+  var revealObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        entry.target.classList.add("pop-in");
+        revealObs.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.12, rootMargin:"0px 0px -8% 0px"});
+  revealTargets.forEach(function(t){ revealObs.observe(t); });
+
+  var navPills = document.querySelectorAll(".navpill[data-section]");
+  var navSections = document.querySelectorAll("main .section[id]");
+  var navObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        navPills.forEach(function(p){ p.classList.toggle("active", p.dataset.section === entry.target.id); });
+      }
+    });
+  }, {rootMargin:"-40% 0px -50% 0px", threshold:0});
+  navSections.forEach(function(s){ navObs.observe(s); });
+}
+
+})();
+</script>
