@@ -134,7 +134,7 @@ button{font-family:inherit;}
 .concept-card h3{font-size:1.05rem;}
 .concept-card .body{font-size:.9rem; color:var(--ink-2); flex:1;}
 .flipbtn{align-self:flex-start; font-size:.78rem; font-weight:700; color:var(--brand); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:3px;}
-.aussie-tag{display:inline-block; font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--flag-red); font-weight:700; margin-bottom:2px;}
+.tag-label{display:inline-block; font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--flag-red); font-weight:700; margin-bottom:2px;}
 
 /* ---- tables ---- */
 .table-scroll{overflow-x:auto; border:1px solid var(--hairline); border-radius:14px; background:var(--surface); box-shadow:var(--shadow);}
@@ -143,7 +143,7 @@ th,td{text-align:left; padding:12px 14px; vertical-align:top; border-bottom:1px 
 thead th{font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; background:var(--surface-2); position:sticky; top:0;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover{background:var(--surface-2);}
-td.aussie{color:var(--ink-2); font-style:italic;}
+td.simple-col{color:var(--ink-2); font-style:italic;}
 .rank{font-family:"IBM Plex Mono"; font-weight:600; color:var(--brand);}
 .searchbar{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
 .searchbar input{flex:1; max-width:320px; padding:9px 12px; border-radius:8px; border:1px solid var(--hairline-strong); background:var(--surface); color:var(--ink); font-size:.88rem;}
@@ -314,7 +314,7 @@ footer{padding-block:40px 60px; color:var(--muted); font-size:.8rem;}
       <a class="navpill" data-section="sources" href="#sources">Sources</a>
     </nav>
     <div class="toggle" id="viewToggle" role="group" aria-label="Reading mode">
-      <button data-mode="simple" class="on" type="button">Aussie</button>
+      <button data-mode="simple" class="on" type="button">Simplified</button>
       <button data-mode="technical" type="button">Technical</button>
     </div>
     <div class="badgechip" title="Badges earned in the Arcade"><span class="dot"></span><span id="badgeCount">0/5</span> badges</div>
@@ -365,7 +365,7 @@ footer{padding-block:40px 60px; color:var(--muted); font-size:.8rem;}
   <div class="section-head">
     <p class="eyebrow">02 &middot; Core concept map</p>
     <h2>Four ways to grade an agent</h2>
-    <p class="lede">Tap any card to switch between the technical definition and the Aussie version. Each framing answers a different question about the same job.</p>
+    <p class="lede">Tap any card to switch between the technical definition and the simplified version. Each framing answers a different question about the same job.</p>
   </div>
   <div class="grid-4" id="conceptGrid"></div>
 </section>
@@ -432,7 +432,7 @@ footer{padding-block:40px 60px; color:var(--muted); font-size:.8rem;}
   <div class="driftpanel" style="margin-top:20px;">
     <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start;">
       <div>
-        <span class="aussie-tag">Mini-game &middot; Smoke-Alarm Sentinel badge</span>
+        <span class="tag-label">Mini-game &middot; Smoke-Alarm Sentinel badge</span>
         <h3 style="font-size:1.1rem;">Drift-detection alarm simulator</h3>
         <p class="caption">Live traffic quality score, sampled continuously. Inject a drift event and watch the smoke alarm decide whether to sound.</p>
       </div>
@@ -540,7 +540,7 @@ footer{padding-block:40px 60px; color:var(--muted); font-size:.8rem;}
     </details>
 
     <details class="gamecard">
-      <summary><div class="tt"><span>Aussie analogy matching</span><small>Match the term to the analogy</small></div><span class="badge-tag" id="badge-matching-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <summary><div class="tt"><span>Plain-English analogy matching</span><small>Match the term to the analogy</small></div><span class="badge-tag" id="badge-matching-tag">locked</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
       <div class="body">
         <div class="match-cols">
           <div id="matchTerms"></div>
@@ -806,13 +806,13 @@ function renderConcepts(){
     function paint(){
       body.innerHTML = "";
       if (showingAussie){
-        body.appendChild(h("span", {class:"aussie-tag"}, [tx("Aussie version")]));
+        body.appendChild(h("span", {class:"tag-label"}, [tx("Simplified")]));
         body.appendChild(document.createElement("br"));
         body.appendChild(tx(c.aussie));
       } else {
         body.appendChild(tx(c.tech));
       }
-      btn.textContent = showingAussie ? "← Show the technical version" : "Show the Aussie version →";
+      btn.textContent = showingAussie ? "← Show the technical version" : "Show the simplified version →";
     }
     var btn = h("button", {class:"flipbtn", type:"button"});
     btn.addEventListener("click", function(){ showingAussie = !showingAussie; paint(); });
@@ -848,7 +848,7 @@ var lastMetricFilter = "";
 function renderMetrics(filter){
   lastMetricFilter = filter;
   metricsHead.innerHTML = globalMode === "simple"
-    ? "<th style='width:18%'>Metric</th><th class='col-mid' style='width:42%'>Aussie analogy</th><th>Why the business cares</th>"
+    ? "<th style='width:18%'>Metric</th><th class='col-mid' style='width:42%'>Plain-English analogy</th><th>Why the business cares</th>"
     : "<th style='width:18%'>Metric</th><th class='col-mid' style='width:42%'>Technical definition</th><th>Why the business cares</th>";
   metricsBody.innerHTML = "";
   METRICS.filter(function(r){
@@ -858,7 +858,7 @@ function renderMetrics(filter){
     var mid = globalMode === "simple" ? r[2] : r[1];
     metricsBody.appendChild(h("tr", {}, [
       h("td", {html:"<strong>"+r[0]+"</strong>"}),
-      h("td", {class: globalMode==="simple" ? "aussie" : "", html:mid}),
+      h("td", {class: globalMode==="simple" ? "simple-col" : "", html:mid}),
       h("td", {html:r[3]})
     ]));
   });
